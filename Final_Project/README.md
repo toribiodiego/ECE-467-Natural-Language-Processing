@@ -13,7 +13,7 @@ To perform multi-label emotion classification on textual data, leveraging pre-tr
 - **DistilBERT** (efficient variant)
 - **SqueezeBERT** (efficient variant)
 
-Each model was fine-tuned and optimized using systematic hyperparameter sweeps with *Weights & Biases* to achieve the best performance, balancing computational efficiency and predictive accuracy.
+Each model was fine-tuned and optimized using systematic hyperparameter sweeps with *Weights & Biases to achieve the best performance, balancing computational efficiency and predictive accuracy.
 
 ## Repository Contents
 
@@ -38,6 +38,8 @@ Each model was fine-tuned and optimized using systematic hyperparameter sweeps w
   DistilBERT provided a good trade-off between performance and efficiency, significantly outperforming SqueezeBERT in accuracy metrics. However, SqueezeBERT remained a viable option when computational speed and memory usage are critical.
 <br>
 
+<center>
+
 | Model            | AUC Score | Validation Loss |
 |------------------|-----------|-----------------|
 | RoBERTa-Large    | 0.957     | 0.089           |
@@ -45,6 +47,7 @@ Each model was fine-tuned and optimized using systematic hyperparameter sweeps w
 | BERT-Large       | 0.953     | 0.097           |
 | DistilBERT       | 0.948     | 0.096           |
 | SqueezeBERT      | 0.944     | 0.093           |
+</center>
 <br>
 
 ## Replicating Results
