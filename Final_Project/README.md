@@ -38,7 +38,7 @@ Each model was fine-tuned and optimized using systematic hyperparameter sweeps w
   DistilBERT provided a good trade-off between performance and efficiency, significantly outperforming SqueezeBERT in accuracy metrics. However, SqueezeBERT remained a viable option when computational speed and memory usage are critical.
 <br>
 
-<center>
+<div align="center">
 
 | Model            | AUC Score | Validation Loss |
 |------------------|-----------|-----------------|
@@ -47,7 +47,8 @@ Each model was fine-tuned and optimized using systematic hyperparameter sweeps w
 | BERT-Large       | 0.953     | 0.097           |
 | DistilBERT       | 0.948     | 0.096           |
 | SqueezeBERT      | 0.944     | 0.093           |
-</center>
+</div>
+
 <br>
 
 ## Replicating Results
