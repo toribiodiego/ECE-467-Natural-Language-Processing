@@ -3,7 +3,7 @@
 > This repository contains the code for **ECE 467: Natural Language Processing**, a 3-credit graduate-level course at The Cooper Union for the Advancement of Science and Art, offering an exploration of both traditional NLP methods and modern deep learning techniques.
 
 
-## Experimentation with PyTorch
+## Natural Language Processing
 **Independent Study, Spring 2025**  
 **Instructor:** Professor Carl Sable   
 **Syllabus:** [View](http://faculty.cooper.edu/sable2/courses/fall2024/ece467)
