@@ -6,7 +6,7 @@
 ## Experimentation with PyTorch
 **Independent Study, Spring 2025**  
 **Instructor:** Professor Carl Sable   
-**Syllabus:** [view](http://faculty.cooper.edu/sable2/courses/fall2024/ece467)
+**Syllabus:** [View](http://faculty.cooper.edu/sable2/courses/fall2024/ece467)
 
 
 ### Overview
@@ -17,12 +17,26 @@ This course provides a practical introduction to natural language processing, em
 
 ### Material
 
-The primary resource for the course is the in-progress draft of [*Speech and Language Processing, 3rd Edition*](https://web.stanford.edu/~jurafsky/slp3/) by Daniel Jurafsky and James H. Martin. This textbook lays the groundwork for understanding both statistical and deep-learning methods in NLP. In addition, the curriculum integrates various published papers and online materials that cover essential topics, including:
+The primary resource for the course is the in-progress draft of [*Speech and Language Processing, 3rd Edition*](https://web.stanford.edu/~jurafsky/slp3/) by Daniel Jurafsky and James H. Martin. This textbook lays the groundwork for understanding both statistical and deep-learning methods in NLP. 
 
 - Traditional NLP techniques such as text categorization, syntax, and semantics.
 - Deep learning fundamentals with feedforward networks, recurrent architectures (including LSTMs), and sequence-to-sequence models.
 - Modern advances with transformers, BERT, GPT variations, and reinforcement learning from human feedback.
 
+In addition, the curriculum integrates various published papers and online materials that cover essential topics, including:
+
+<div align="center">
+
+| **Topic**                   | **Paper** |
+|-----------------------------|-----------|
+| **ELMo**                    | [ELMo](https://arxiv.org/abs/1802.05365) |
+| **Transformers**            | [Attention Is All You Need](https://arxiv.org/abs/1706.03762) |
+| **BERT**                    | [BERT](https://arxiv.org/abs/1810.04805) |
+| **Large Language Models**   | [GPT-1](https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf) |
+| **Large Language Models**   | [GPT-3](https://arxiv.org/abs/2005.14165) |
+| **RLHF**                    | [InstructGPT](https://arxiv.org/abs/2203.02155) |
+| **Ethics of NLP**           | [Stochastic Parrots](https://dl.acm.org/doi/10.1145/3442188.3445922) |
+</div>
 
 ### Repository Structure
 
