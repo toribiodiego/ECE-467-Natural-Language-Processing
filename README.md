@@ -27,9 +27,6 @@ The primary resource for the course is the in-progress draft of [*Speech and Lan
 ### Repository Structure
 
 
-
 ### Final Project
 
-
-
-
+The project, *Multi-Label Emotion Classification Using Transformer Architectures*, investigates how different transformer models perform on the task of detecting multiple emotions in text. Leveraging the GoEmotions dataset—which captures the nuanced expression of 27 distinct emotions—the goal is to evaluate how variations in architecture, from robust models like BERT and RoBERTa to efficient alternatives like DistilBERT and SqueezeBERT, affect classification accuracy and efficiency. By comparing these approaches, the project seeks to uncover innovative strategies for optimizing transformer-based NLP systems for fine-grained emotion detection.
