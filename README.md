@@ -4,7 +4,7 @@
 
 
 ## Natural Language Processing
-**Independent Study, Spring 2025**  
+**Course, Fall 2024**  
 **Instructor:** Professor Carl Sable   
 **Syllabus:** [View](http://faculty.cooper.edu/sable2/courses/fall2024/ece467)
 
