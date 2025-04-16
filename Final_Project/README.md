@@ -15,18 +15,18 @@ To perform multi-label emotion classification on textual data, leveraging pre-tr
 
 Each model was fine-tuned and optimized using systematic hyperparameter sweeps with *Weights & Biases to achieve the best performance, balancing computational efficiency and predictive accuracy.
 
-## Repository Contents
+## Repository Structure
 
-- `Dataset_Analysis.ipynb`  
+- **`Dataset_Analysis.ipynb`**  
   - Exploratory analysis of the GoEmotions dataset, including label distributions, tokenization statistics, and co-occurrence of emotion labels.
 
-- `Final_Project.ipynb`  
+- **`Final_Project.ipynb`**
   - Full implementation of model training, validation, and testing pipelines. Includes hyperparameter tuning, multi-label classification setup, and model evaluations.
 
-- `Final_Project_Presentation.pdf`  
+- **`Final_Project_Presentation.pdf`**  
   - Slides summarizing the project goals, methodology, key results, and conclusions.
 
-- `Final_Project_Report.pdf`  
+- **`Final_Project_Report.pdf`**  
   - Comprehensive report detailing the dataset, methods, experiments, and complete findings from the project.
 
 ## Key Results
@@ -63,7 +63,7 @@ For more detailed insights into methods, experimental setup, and complete analys
 ---
 ## References 
 
-<a name="footnote1">1</a>: [ArXiv: GoEmotions: A Dataset for Fine-Grained Emotion Classification](https://arxiv.org/pdf/2005.00547)
+<a name="footnote1">1</a>: [GoEmotions: A Dataset for Fine-Grained Emotion Classification](https://arxiv.org/pdf/2005.00547)
 
 <a name="footnote2">2</a>: [Google Research Blog: GoEmotions - A Dataset for Fine-Grained Emotion Classification](https://research.google/blog/goemotions-a-dataset-for-fine-grained-emotion-classification/)
 
