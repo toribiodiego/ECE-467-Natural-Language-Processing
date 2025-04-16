@@ -40,6 +40,29 @@ In addition, the curriculum integrates various published papers and online mater
 
 ### Repository Structure
 
+```
+.
+├── Final_Project
+│   ├── Dataset_Analysis.ipynb
+│   ├── Final_Project.ipynb
+│   ├── Final_Project_Presentation.pdf
+│   ├── Final_Project_Report.pdf
+│   └── README.md
+├── P02
+│   ├── P02.ipynb
+│   ├── P02_Report.pdf
+│   └── README.md
+└── README.md
+```
+- **P02.ipynb** – *LSTM-Based Experiments*  
+  - Showcases text classification using recurrent architectures and various embedding strategies.
+
+- **Dataset_Analysis.ipynb** – *Exploratory Analysis*  
+  - Presents data-loading steps, distributions, and initial insights to guide model development.
+
+- **Final_Project.ipynb** – *Model Implementation*  
+  - Demonstrates the classification pipeline, from training scripts to evaluation metrics, using transformer-based models.
+
 
 ### Final Project
 
