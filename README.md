@@ -54,13 +54,13 @@ In addition, the curriculum integrates various published papers and online mater
 │   └── README.md
 └── README.md
 ```
-- **P02.ipynb** – *LSTM-Based Experiments*  
+- **`P02.ipynb`** – *LSTM-Based Experiments*  
   - Showcases text classification using recurrent architectures and various embedding strategies.
 
-- **Dataset_Analysis.ipynb** – *Exploratory Analysis*  
+- **`Dataset_Analysis.ipynb`** – *Exploratory Analysis*  
   - Presents data-loading steps, distributions, and initial insights to guide model development.
 
-- **Final_Project.ipynb** – *Model Implementation*  
+- **`Final_Project.ipynb`** – *Model Implementation*  
   - Demonstrates the classification pipeline, from training scripts to evaluation metrics, using transformer-based models.
 
 
