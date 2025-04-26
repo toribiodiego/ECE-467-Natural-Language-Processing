@@ -36,7 +36,7 @@ Each model was fine-tuned and optimized using systematic hyperparameter sweeps w
 - **`Final_Project_Report.pdf`**  
   - Comprehensive report detailing the dataset, methods, experiments, and complete findings from the project.
 
-## Key Results
+### Results
 
 - **Best Performing Models:**  
   RoBERTa-Large and RoBERTa consistently outperformed BERT-based models, achieving higher AUC scores and lower validation losses, indicating better optimization and generalization capabilities.
@@ -58,16 +58,14 @@ Each model was fine-tuned and optimized using systematic hyperparameter sweeps w
 
 <br>
 
-## Replication
+### Replication
 
 All experiments were systematically tracked using **Weights & Biases (W&B)** for reproducibility. Hyperparameter settings, GPU utilization, and detailed training metrics are logged for transparency and ease of replication.
 
-## More Information
-
-For more detailed insights into methods, experimental setup, and complete analysis, please refer to the **Final Project Report** available in this repository.
+- For more detailed insights into methods, experimental setup, and complete analysis, please refer to the **Final Project Report** available in this repository.
 
 
----
+
 ## References 
 
 <a name="footnote1">1</a>: [GoEmotions: A Dataset for Fine-Grained Emotion Classification](https://arxiv.org/pdf/2005.00547)
