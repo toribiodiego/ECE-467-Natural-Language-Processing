@@ -1,10 +1,8 @@
-# Multi-Label Emotion Classification: Comparing Transformer Models
+## Multi-Label Emotion Classification: Comparing Transformer Models
 
 This directory contains my final project for the **Natural Language Processing (ECE-467)** course, which focused on exploring multi-label emotion classification using transformer models. Specifically, the GoEmotions<sup>[1](#footnote1)</sup><sup>, [2](#footnote2)</sup> dataset by Google Research was used to evaluate and compare the effectiveness and efficiency of various transformer architectures.
 
-## Project Overview
-
-**Objective:**  
+### Objective  
 To perform multi-label emotion classification on textual data, leveraging pre-trained transformer models to detect nuanced emotional expressions. The GoEmotions dataset comprises Reddit comments labeled with one or more emotions across 27 distinct categories.
 
 **Transformer Models Evaluated:**
