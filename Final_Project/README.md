@@ -13,7 +13,16 @@ To perform multi-label emotion classification on textual data, leveraging pre-tr
 
 Each model was fine-tuned and optimized using systematic hyperparameter sweeps with *Weights & Biases to achieve the best performance, balancing computational efficiency and predictive accuracy.
 
-## Repository Structure
+### Directory Structure
+
+```
+.
+├── Dataset_Analysis.ipynb
+├── Final_Project.ipynb
+├── Final_Project_Presentation.pdf
+├── Final_Project_Report.pdf
+└── README.md
+```
 
 - **`Dataset_Analysis.ipynb`**  
   - Exploratory analysis of the GoEmotions dataset, including label distributions, tokenization statistics, and co-occurrence of emotion labels.
