@@ -58,7 +58,7 @@ Each model was fine-tuned and optimized using systematic hyperparameter sweeps w
 
 <br>
 
-## Replicating Results
+## Replication
 
 All experiments were systematically tracked using **Weights & Biases (W&B)** for reproducibility. Hyperparameter settings, GPU utilization, and detailed training metrics are logged for transparency and ease of replication.
 
