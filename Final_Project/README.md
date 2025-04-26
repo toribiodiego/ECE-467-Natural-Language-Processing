@@ -5,6 +5,8 @@ This directory contains my final project for the **Natural Language Processing (
 ### Objective  
 To perform multi-label emotion classification on textual data, leveraging pre-trained transformer models to detect nuanced emotional expressions. The GoEmotions dataset comprises Reddit comments labeled with one or more emotions across 27 distinct categories.
 
+### Approach
+
 **Transformer Models Evaluated:**
 - **BERT & BERT-Large**
 - **RoBERTa & RoBERTa-Large**
