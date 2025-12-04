@@ -1,0 +1,50 @@
+# Personal task tracking
+TODO.md
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Data files (if large datasets)
+*.csv
+*.parquet
+data/
+datasets/
+
+# Model checkpoints
+*.pt
+*.pth
+*.ckpt
+checkpoints/
+
+# Weights & Biases
+wandb/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated figures (optional - uncomment if you want to exclude)
+# *-comparison.png
+# *-performance.png
+# *-tradeoff.png
+# *-patterns.png
