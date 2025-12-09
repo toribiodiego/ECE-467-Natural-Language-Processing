@@ -8,15 +8,13 @@ HuggingFace Hub with proper error handling and validation.
 import logging
 from typing import Dict, List, Optional, Tuple
 from datasets import load_dataset, DatasetDict
-from datasets.exceptions import DatasetNotFoundError
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 
 def load_go_emotions(
-    cache_dir: Optional[str] = None,
-    trust_remote_code: bool = False
+    cache_dir: Optional[str] = None
 ) -> DatasetDict:
     """
     Load the GoEmotions dataset from HuggingFace Hub.
@@ -28,15 +26,13 @@ def load_go_emotions(
     Args:
         cache_dir: Optional directory to cache the downloaded dataset.
                   If None, uses HuggingFace's default cache location.
-        trust_remote_code: Whether to trust remote code when loading dataset.
-                          Default is False for security.
 
     Returns:
         DatasetDict with 'train', 'validation', and 'test' splits.
         Each split contains 'text' and 'labels' fields.
 
     Raises:
-        DatasetNotFoundError: If the dataset cannot be found on HuggingFace Hub.
+        FileNotFoundError: If the dataset cannot be found on HuggingFace Hub.
         ConnectionError: If there's a network issue downloading the dataset.
         RuntimeError: If the dataset structure is invalid or corrupted.
 
@@ -51,8 +47,7 @@ def load_go_emotions(
 
         dataset = load_dataset(
             "go_emotions",
-            cache_dir=cache_dir,
-            trust_remote_code=trust_remote_code
+            cache_dir=cache_dir
         )
 
         # Validate dataset structure
@@ -96,9 +91,9 @@ def load_go_emotions(
 
         return dataset
 
-    except DatasetNotFoundError as e:
+    except FileNotFoundError as e:
         logger.error("GoEmotions dataset not found on HuggingFace Hub")
-        raise DatasetNotFoundError(
+        raise FileNotFoundError(
             "Could not find 'go_emotions' dataset on HuggingFace Hub. "
             "Ensure you have an internet connection and the dataset name is correct."
         ) from e
