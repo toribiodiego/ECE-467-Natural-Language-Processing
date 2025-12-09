@@ -1,6 +1,9 @@
 # Personal task tracking
 TODO.md
 
+# Environment configuration
+.env
+
 # Jupyter Notebook
 .ipynb_checkpoints/
 */.ipynb_checkpoints/*
@@ -43,8 +46,18 @@ wandb/
 .DS_Store
 Thumbs.db
 
-# Generated figures (optional - uncomment if you want to exclude)
-# *-comparison.png
-# *-performance.png
-# *-tradeoff.png
-# *-patterns.png
+# Generated outputs and artifacts
+# Ignore contents but track directory structure (.gitkeep, README.md)
+output/**/*
+!output/**/.gitkeep
+!output/**/README.md
+artifacts/**/*
+!artifacts/**/.gitkeep
+!artifacts/**/README.md
+
+# Generated figures
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
