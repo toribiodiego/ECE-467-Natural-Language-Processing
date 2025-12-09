@@ -8,10 +8,12 @@ multiple emotions).
 
 import logging
 import os
+from pathlib import Path
 from typing import Dict, List, Any
 from collections import Counter
 from datasets import Dataset, DatasetDict
 import pandas as pd
+from dotenv import load_dotenv
 
 from .load_dataset import load_go_emotions
 
@@ -230,7 +232,13 @@ def main() -> None:
 
     Loads the GoEmotions dataset, calculates statistics for all splits,
     prints a summary, and saves results to CSV.
+
+    Environment variables (loaded from .env):
+        OUTPUT_DIR: Base directory for output files (default: 'output')
     """
+    # Load environment variables from .env file
+    load_dotenv()
+
     # Configure logging for standalone execution
     logging.basicConfig(
         level=logging.INFO,
