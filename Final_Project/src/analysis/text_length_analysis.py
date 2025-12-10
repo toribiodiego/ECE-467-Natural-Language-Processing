@@ -254,7 +254,8 @@ def create_character_histogram(
     # Create figure with 1 row x 3 columns (train, val, test)
     fig, axes = plt.subplots(1, 3, figsize=figsize, dpi=dpi)
 
-    colors = ['#0000ff', '#00ff00', '#ff0000']  # Pure blue, green, red
+    # Pure RGB colors using hex: true blue, true green, true red
+    colors = ['#0000FF', '#00FF00', '#FF0000']
 
     # Use 99.9th percentile for x-axis limit (shows 99.9% of data)
     # This balances completeness with avoiding extreme outlier distortion
@@ -276,24 +277,24 @@ def create_character_histogram(
 
         # Only add labels to leftmost plot
         if i == 0:
-            ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+            ax.set_ylabel('Frequency', fontsize=12, fontweight='bold')
 
         ax.set_title(f'{split_name.capitalize()}',
                     fontsize=12, fontweight='bold')
-        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        ax.grid(axis='y', alpha=0.5, linestyle='--', linewidth=0.8)
 
         # Set unified x-axis limit
         ax.set_xlim(0, max_char_length)
 
-    # Common x-axis label centered below all plots
-    fig.text(0.5, 0.02, 'Character Count', ha='center', fontsize=11, fontweight='bold')
+    # Common x-axis label centered below all plots with more spacing
+    fig.text(0.5, -0.02, 'Character Count', ha='center', fontsize=13, fontweight='bold')
 
     # Overall title
     fig.suptitle('Character Length',
                 fontsize=16, fontweight='bold', y=0.98)
 
-    # Tight layout
-    plt.tight_layout()
+    # Tight layout with more padding at bottom for x-axis label
+    plt.tight_layout(rect=[0, 0.03, 1, 0.96])
 
     # Save figure
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -333,7 +334,8 @@ def create_token_histogram(
     # Create figure with 1 row x 3 columns (train, val, test)
     fig, axes = plt.subplots(1, 3, figsize=figsize, dpi=dpi)
 
-    colors = ['#0000ff', '#00ff00', '#ff0000']  # Pure blue, green, red
+    # Pure RGB colors using hex: true blue, true green, true red
+    colors = ['#0000FF', '#00FF00', '#FF0000']
 
     # Use 99.9th percentile for x-axis limit (shows 99.9% of data)
     # This balances completeness with avoiding extreme outlier distortion
@@ -355,24 +357,24 @@ def create_token_histogram(
 
         # Only add labels to leftmost plot
         if i == 0:
-            ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+            ax.set_ylabel('Frequency', fontsize=12, fontweight='bold')
 
         ax.set_title(f'{split_name.capitalize()}',
                     fontsize=12, fontweight='bold')
-        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        ax.grid(axis='y', alpha=0.5, linestyle='--', linewidth=0.8)
 
         # Set unified x-axis limit
         ax.set_xlim(0, max_token_length)
 
-    # Common x-axis label centered below all plots
-    fig.text(0.5, 0.02, 'Token Count', ha='center', fontsize=11, fontweight='bold')
+    # Common x-axis label centered below all plots with more spacing
+    fig.text(0.5, -0.02, 'Token Count', ha='center', fontsize=13, fontweight='bold')
 
     # Overall title
     fig.suptitle('Token Length',
                 fontsize=16, fontweight='bold', y=0.98)
 
-    # Tight layout
-    plt.tight_layout()
+    # Tight layout with more padding at bottom for x-axis label
+    plt.tight_layout(rect=[0, 0.03, 1, 0.96])
 
     # Save figure
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
