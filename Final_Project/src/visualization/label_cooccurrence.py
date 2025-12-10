@@ -304,7 +304,7 @@ def main() -> None:
         logger.info("Generating co-occurrence heatmap(s)...")
 
         # Generate annotated version
-        annotated_path = os.path.join(output_dir, 'figures', '02_label_cooccurrence_annotated.png')
+        annotated_path = os.path.join(output_dir, 'figures', '02_label_cooccurrence.png')
         annotated_saved_path = create_cooccurrence_heatmap(
             cooccurrence_matrix,
             label_names,
@@ -321,7 +321,7 @@ def main() -> None:
 
         # Generate clean version if configured
         if GENERATE_BOTH_VERSIONS:
-            clean_path = os.path.join(output_dir, 'figures', '02_label_cooccurrence_clean.png')
+            clean_path = os.path.join(output_dir, 'figures', '03_label_cooccurrence_clean.png')
             clean_saved_path = create_cooccurrence_heatmap(
                 cooccurrence_matrix,
                 label_names,
