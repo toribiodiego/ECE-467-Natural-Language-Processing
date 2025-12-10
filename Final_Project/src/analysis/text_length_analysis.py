@@ -236,6 +236,11 @@ def create_character_histogram(
     """
     Create histogram visualization of character length distributions.
 
+    Uses 99th percentile for x-axis limit to avoid distortion from extreme
+    outliers. Histogram bins are created using numpy's automatic binning
+    algorithm based on the data range, which may result in different bin
+    counts across splits if their ranges differ significantly.
+
     Args:
         split_names: List of split names
         all_char_lengths: Dictionary mapping split to character lengths
@@ -252,15 +257,22 @@ def create_character_histogram(
 
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Blue, orange, green
 
-    # Find maximum character length across all splits for unified x-axis
-    max_char_length = max(max(lengths) for lengths in all_char_lengths.values())
+    # Use 99th percentile for x-axis limit to avoid outlier distortion
+    # This provides better visualization of the main distribution
+    all_lengths = []
+    for lengths in all_char_lengths.values():
+        all_lengths.extend(lengths)
+    max_char_length = np.percentile(all_lengths, 99)
 
     # Plot character length distributions
     for i, split_name in enumerate(split_names):
         ax = axes[i]
         char_lengths = all_char_lengths[split_name]
 
-        ax.hist(char_lengths, bins=char_bins, color=colors[i],
+        # Filter to x-axis range for binning consistency
+        filtered_lengths = [l for l in char_lengths if l <= max_char_length]
+
+        ax.hist(filtered_lengths, bins=char_bins, color=colors[i],
                 alpha=0.7, edgecolor='black', linewidth=0.5)
         ax.set_xlabel('Character Count', fontsize=11, fontweight='bold')
         ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
@@ -272,7 +284,7 @@ def create_character_histogram(
         ax.set_xlim(0, max_char_length)
 
     # Overall title
-    fig.suptitle('Character Length Distributions by Split',
+    fig.suptitle('Character Length Distributions by Split (99th percentile)',
                 fontsize=16, fontweight='bold', y=1.02)
 
     # Tight layout
@@ -297,6 +309,15 @@ def create_token_histogram(
     """
     Create histogram visualization of token length distributions.
 
+    Uses 99th percentile for x-axis limit to avoid distortion from extreme
+    outliers. This ensures the main distribution is clearly visible while
+    extreme cases (e.g., 1437 tokens) don't compress the visualization.
+
+    Note on binning: Matplotlib creates histogram bins based on the data
+    range. Since all three splits have similar distributions (99th percentile
+    around 37-38 tokens), they will have consistent bin widths and counts,
+    making visual comparison accurate.
+
     Args:
         split_names: List of split names
         all_token_lengths: Dictionary mapping split to token lengths
@@ -313,15 +334,21 @@ def create_token_histogram(
 
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Blue, orange, green
 
-    # Find maximum token length across all splits for unified x-axis
-    max_token_length = max(max(lengths) for lengths in all_token_lengths.values())
+    # Use 99th percentile for x-axis limit to avoid outlier distortion
+    all_lengths = []
+    for lengths in all_token_lengths.values():
+        all_lengths.extend(lengths)
+    max_token_length = np.percentile(all_lengths, 99)
 
     # Plot token length distributions
     for i, split_name in enumerate(split_names):
         ax = axes[i]
         token_lengths = all_token_lengths[split_name]
 
-        ax.hist(token_lengths, bins=token_bins, color=colors[i],
+        # Filter to x-axis range for binning consistency
+        filtered_lengths = [l for l in token_lengths if l <= max_token_length]
+
+        ax.hist(filtered_lengths, bins=token_bins, color=colors[i],
                 alpha=0.7, edgecolor='black', linewidth=0.5)
         ax.set_xlabel('Token Count', fontsize=11, fontweight='bold')
         ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
@@ -336,14 +363,16 @@ def create_token_histogram(
         for max_len, line_color, label in [(128, '#ff0000', '128'),
                                             (256, '#ff8c00', '256'),
                                             (512, '#008000', '512')]:
-            ax.axvline(x=max_len, color=line_color, linestyle='--',
-                      linewidth=2, alpha=0.8, label=f'max={label}')
+            # Only show lines that are within the visible range
+            if max_len <= max_token_length:
+                ax.axvline(x=max_len, color=line_color, linestyle='--',
+                          linewidth=2, alpha=0.8, label=f'max={label}')
 
         if i == 2:  # Only add legend to rightmost plot
             ax.legend(loc='upper right', fontsize=9)
 
     # Overall title
-    fig.suptitle('Token Length Distributions by Split',
+    fig.suptitle('Token Length Distributions by Split (99th percentile)',
                 fontsize=16, fontweight='bold', y=1.02)
 
     # Tight layout
