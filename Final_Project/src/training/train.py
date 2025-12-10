@@ -242,6 +242,46 @@ def parse_args() -> argparse.Namespace:
         help='Save checkpoint every N steps (default: save only best model)'
     )
 
+    # Threshold configuration
+    threshold_group = parser.add_argument_group('Threshold Configuration')
+    threshold_group.add_argument(
+        '--threshold-strategy',
+        type=str,
+        default='global',
+        choices=['global', 'per_class', 'top_k'],
+        help='Threshold strategy for predictions (global=single threshold, per_class=optimize per label, top_k=select top k predictions)'
+    )
+    threshold_group.add_argument(
+        '--threshold',
+        type=float,
+        default=0.5,
+        help='Global threshold for binary classification (used with global strategy)'
+    )
+    threshold_group.add_argument(
+        '--top-k',
+        type=int,
+        default=1,
+        help='Number of top predictions to select per sample (used with top_k strategy)'
+    )
+
+    # Preprocessing configuration
+    preproc_group = parser.add_argument_group('Preprocessing Configuration')
+    preproc_group.add_argument(
+        '--lowercase',
+        action='store_true',
+        help='Convert text to lowercase before tokenization'
+    )
+    preproc_group.add_argument(
+        '--remove-urls',
+        action='store_true',
+        help='Remove URLs from text before tokenization'
+    )
+    preproc_group.add_argument(
+        '--remove-emojis',
+        action='store_true',
+        help='Remove emojis from text before tokenization'
+    )
+
     args = parser.parse_args()
 
     # Apply max-epochs override if specified
@@ -347,6 +387,23 @@ def print_configuration(args: argparse.Namespace) -> None:
     logger.info(f"  Warmup steps:     {args.warmup_steps}")
     logger.info(f"  Max seq length:   {args.max_seq_length}")
     logger.info(f"  Random seed:      {args.seed}")
+    logger.info("")
+    logger.info("Threshold:")
+    logger.info(f"  Strategy:         {args.threshold_strategy}")
+    if args.threshold_strategy == 'global':
+        logger.info(f"  Threshold:        {args.threshold}")
+    elif args.threshold_strategy == 'top_k':
+        logger.info(f"  Top-k:            {args.top_k}")
+    logger.info("")
+    logger.info("Preprocessing:")
+    preproc_flags = []
+    if args.lowercase:
+        preproc_flags.append("lowercase")
+    if args.remove_urls:
+        preproc_flags.append("remove_urls")
+    if args.remove_emojis:
+        preproc_flags.append("remove_emojis")
+    logger.info(f"  Flags:            {', '.join(preproc_flags) if preproc_flags else 'none'}")
     logger.info("")
     logger.info("Output:")
     logger.info(f"  Output directory: {args.output_dir}")
@@ -779,7 +836,10 @@ def evaluate_model(
     model: MultiLabelClassificationModel,
     dataloader: DataLoader,
     device: torch.device,
-    label_names: List[str]
+    label_names: List[str],
+    threshold_strategy: str = 'global',
+    threshold: float = 0.5,
+    top_k: int = 1
 ) -> Dict[str, Any]:
     """
     Evaluate the model and compute comprehensive metrics.
@@ -794,6 +854,9 @@ def evaluate_model(
         dataloader: DataLoader for evaluation data
         device: Device to evaluate on (cuda or cpu)
         label_names: List of label names for per-class metrics
+        threshold_strategy: Strategy for thresholding ('global', 'per_class', 'top_k')
+        threshold: Global threshold value (used with 'global' strategy)
+        top_k: Number of top predictions to select (used with 'top_k' strategy)
 
     Returns:
         Dictionary containing:
@@ -848,14 +911,28 @@ def evaluate_model(
     logger.info(f"Number of labels: {len(label_names)}")
 
     # Use metrics utilities for comprehensive evaluation
-    results = evaluate_with_threshold(
-        y_true=all_labels_np,
-        y_probs=all_probs,
-        label_names=label_names,
-        threshold=0.5,
-        compute_pr_curves_flag=False,
-        compute_confusion=True
-    )
+    # Apply threshold strategy from CLI
+    eval_kwargs = {
+        'y_true': all_labels_np,
+        'y_probs': all_probs,
+        'label_names': label_names,
+        'compute_pr_curves_flag': False,
+        'compute_confusion': True
+    }
+
+    if threshold_strategy == 'global':
+        eval_kwargs['threshold'] = threshold
+    elif threshold_strategy == 'top_k':
+        eval_kwargs['top_k'] = top_k
+    elif threshold_strategy == 'per_class':
+        # Import optimize function for per-class thresholds
+        from src.training.metrics_utils import optimize_thresholds_f1
+        logger.info("Optimizing per-class thresholds on validation set...")
+        optimal_thresholds = optimize_thresholds_f1(all_labels_np, all_probs, label_names)
+        eval_kwargs['per_class_thresholds'] = optimal_thresholds
+        logger.info(f"Optimized thresholds (showing first 5): {dict(list(optimal_thresholds.items())[:5])}")
+
+    results = evaluate_with_threshold(**eval_kwargs)
 
     # Log results using the utility function
     log_evaluation_results(results, logger_instance=logger)
@@ -1041,8 +1118,16 @@ def main() -> None:
         # Train model
         history = train_model(model, train_loader, val_loader, args, device, use_wandb=use_wandb)
 
-        # Evaluate model on test set
-        test_metrics = evaluate_model(model, test_loader, device, label_names)
+        # Evaluate model on test set with threshold settings
+        test_metrics = evaluate_model(
+            model=model,
+            dataloader=test_loader,
+            device=device,
+            label_names=label_names,
+            threshold_strategy=args.threshold_strategy,
+            threshold=args.threshold,
+            top_k=args.top_k
+        )
 
         # Calculate best epoch and total training time
         best_epoch = int(history['val_auc'].index(max(history['val_auc'])) + 1)
