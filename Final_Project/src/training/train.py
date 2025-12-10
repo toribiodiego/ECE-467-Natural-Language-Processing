@@ -14,7 +14,11 @@ Usage:
 import argparse
 import logging
 import sys
-from typing import Dict, Any, Tuple, List
+import os
+import json
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, Any, Tuple, List, Optional
 import torch
 import torch.nn as nn
 import numpy as np
@@ -999,6 +1003,83 @@ def evaluate_model(
 
 
 # ============================================================================
+# Checkpoint Saving
+# ============================================================================
+
+def save_checkpoint(
+    model: MultiLabelClassificationModel,
+    tokenizer: AutoTokenizer,
+    model_name: str,
+    metrics: Optional[Dict[str, Any]] = None,
+    checkpoint_dir: str = "artifacts/models"
+) -> str:
+    """
+    Save model checkpoint with config, weights, and tokenizer.
+
+    Creates a timestamped directory under artifacts/models/ and saves:
+    - Model weights (pytorch_model.bin)
+    - Model config (config.json)
+    - Tokenizer files
+    - Training metrics if provided (metrics.json)
+
+    Args:
+        model: Trained model to save
+        tokenizer: Tokenizer used for training
+        model_name: Base model name (e.g., 'roberta-large', 'distilbert-base')
+        metrics: Optional dictionary of training/evaluation metrics
+        checkpoint_dir: Base directory for checkpoints (default: artifacts/models)
+
+    Returns:
+        Path to the saved checkpoint directory
+    """
+    # Create timestamped checkpoint directory
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    checkpoint_path = Path(checkpoint_dir) / f"{model_name}-{timestamp}"
+    checkpoint_path.mkdir(parents=True, exist_ok=True)
+
+    logger.info("")
+    logger.info("=" * 70)
+    logger.info("Saving Checkpoint")
+    logger.info("=" * 70)
+    logger.info(f"Checkpoint directory: {checkpoint_path}")
+
+    # Save model weights
+    model_file = checkpoint_path / "pytorch_model.bin"
+    torch.save(model.state_dict(), model_file)
+    logger.info(f"  ✓ Saved model weights: {model_file.name}")
+
+    # Save model config
+    config_dict = {
+        'model_type': model_name,
+        'hidden_size': model.config.hidden_size,
+        'num_labels': model.classifier.out_features,
+        'dropout': model.dropout.p,
+        'transformer_config': model.config.to_dict()
+    }
+    config_file = checkpoint_path / "config.json"
+    with open(config_file, 'w') as f:
+        json.dump(config_dict, f, indent=2)
+    logger.info(f"  ✓ Saved model config: {config_file.name}")
+
+    # Save tokenizer
+    tokenizer.save_pretrained(checkpoint_path)
+    logger.info(f"  ✓ Saved tokenizer files")
+
+    # Save metrics if provided
+    if metrics is not None:
+        metrics_file = checkpoint_path / "metrics.json"
+        with open(metrics_file, 'w') as f:
+            json.dump(metrics, f, indent=2)
+        logger.info(f"  ✓ Saved metrics: {metrics_file.name}")
+
+    logger.info("")
+    logger.info(f"Checkpoint saved successfully to: {checkpoint_path}")
+    logger.info("=" * 70)
+
+    return str(checkpoint_path)
+
+
+# ============================================================================
 # Main Function
 # ============================================================================
 
@@ -1039,6 +1120,21 @@ def main() -> None:
         # Evaluate model on test set
         test_metrics = evaluate_model(model, test_loader, device, label_names)
 
+        # Save checkpoint with training history and test metrics
+        checkpoint_metrics = {
+            'train_loss': history['train_loss'],
+            'val_loss': history['val_loss'],
+            'best_val_loss': float(min(history['val_loss'])),
+            'best_epoch': int(history['val_loss'].index(min(history['val_loss'])) + 1),
+            'test_metrics': test_metrics
+        }
+        checkpoint_path = save_checkpoint(
+            model=model,
+            tokenizer=tokenizer,
+            model_name=args.model,
+            metrics=checkpoint_metrics
+        )
+
         # Placeholder for remaining implementation
         logger.info("")
         logger.info("Training pipeline status:")
@@ -1047,11 +1143,12 @@ def main() -> None:
         logger.info("  ✓ Model initialization")
         logger.info("  ✓ Training loop with optimization")
         logger.info("  ✓ Evaluation metrics (AUC, F1, precision, recall)")
-        logger.info("  - Checkpoint saving")
+        logger.info("  ✓ Checkpoint saving")
         logger.info("  - W&B logging and artifact upload")
         logger.info("")
         logger.info(f"Training complete. Best val loss: {min(history['val_loss']):.4f}")
         logger.info(f"Test metrics: AUC={test_metrics['auc']:.4f}, Macro F1={test_metrics['macro_f1']:.4f}, Micro F1={test_metrics['micro_f1']:.4f}")
+        logger.info(f"Checkpoint saved to: {checkpoint_path}")
 
     except ValueError as e:
         logger.error(f"Configuration error: {e}")
