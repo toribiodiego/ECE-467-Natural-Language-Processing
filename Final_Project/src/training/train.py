@@ -16,8 +16,9 @@ import logging
 import sys
 from typing import Dict, Any, Tuple, List
 import torch
+import torch.nn as nn
 from datasets import DatasetDict
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModel, AutoConfig
 from torch.utils.data import DataLoader, Dataset as TorchDataset
 
 from src.data.load_dataset import load_go_emotions, get_label_names, get_dataset_statistics
@@ -558,6 +559,154 @@ def tokenize_and_create_dataloaders(
 
 
 # ============================================================================
+# Model Initialization
+# ============================================================================
+
+class MultiLabelClassificationModel(nn.Module):
+    """
+    Multi-label classification model with pretrained transformer backbone.
+
+    Adds a classification head on top of pretrained transformer models
+    (RoBERTa, BERT, DistilBERT) for multi-label emotion classification.
+    """
+
+    def __init__(
+        self,
+        model_name_or_path: str,
+        num_labels: int,
+        dropout: float = 0.1
+    ):
+        """
+        Initialize multi-label classification model.
+
+        Args:
+            model_name_or_path: HuggingFace model identifier
+            num_labels: Number of labels for classification (28 for GoEmotions)
+            dropout: Dropout probability for classification head
+        """
+        super().__init__()
+
+        # Load pretrained transformer model
+        self.config = AutoConfig.from_pretrained(model_name_or_path)
+        self.transformer = AutoModel.from_pretrained(model_name_or_path)
+
+        # Get hidden size from model configuration
+        self.hidden_size = self.config.hidden_size
+
+        # Classification head
+        self.dropout = nn.Dropout(dropout)
+        self.classifier = nn.Linear(self.hidden_size, num_labels)
+
+        # Store configuration
+        self.num_labels = num_labels
+
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        labels: torch.Tensor = None
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Forward pass through the model.
+
+        Args:
+            input_ids: Token IDs [batch_size, seq_length]
+            attention_mask: Attention mask [batch_size, seq_length]
+            labels: Multi-label targets [batch_size, num_labels] (optional)
+
+        Returns:
+            Dictionary with 'logits' and optionally 'loss'
+        """
+        # Get transformer outputs
+        outputs = self.transformer(
+            input_ids=input_ids,
+            attention_mask=attention_mask
+        )
+
+        # Use [CLS] token representation (first token)
+        pooled_output = outputs.last_hidden_state[:, 0, :]
+
+        # Apply dropout and classification layer
+        pooled_output = self.dropout(pooled_output)
+        logits = self.classifier(pooled_output)
+
+        # Calculate loss if labels provided
+        loss = None
+        if labels is not None:
+            # Binary cross-entropy with logits for multi-label classification
+            loss_fct = nn.BCEWithLogitsLoss()
+            loss = loss_fct(logits, labels)
+
+        return {
+            'logits': logits,
+            'loss': loss
+        }
+
+
+def initialize_model(
+    model_name: str,
+    num_labels: int,
+    args: argparse.Namespace
+) -> MultiLabelClassificationModel:
+    """
+    Initialize pretrained model for multi-label classification.
+
+    Args:
+        model_name: CLI model name (e.g., 'roberta-large')
+        num_labels: Number of emotion labels
+        args: Parsed command line arguments
+
+    Returns:
+        Initialized model ready for training
+
+    Raises:
+        RuntimeError: If model initialization fails
+    """
+    logger.info("")
+    logger.info("=" * 70)
+    logger.info("Model Initialization")
+    logger.info("=" * 70)
+
+    try:
+        # Get HuggingFace model path
+        model_name_or_path = get_model_name_or_path(model_name)
+        logger.info(f"Loading pretrained model: {model_name_or_path}")
+
+        # Initialize model
+        model = MultiLabelClassificationModel(
+            model_name_or_path=model_name_or_path,
+            num_labels=num_labels,
+            dropout=args.dropout
+        )
+
+        logger.info(f"Model loaded: {model.__class__.__name__}")
+        logger.info(f"  Backbone: {model_name_or_path}")
+        logger.info(f"  Hidden size: {model.hidden_size}")
+        logger.info(f"  Number of labels: {model.num_labels}")
+        logger.info(f"  Dropout: {args.dropout}")
+
+        # Count parameters
+        total_params = sum(p.numel() for p in model.parameters())
+        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+        logger.info(f"  Total parameters: {total_params:,}")
+        logger.info(f"  Trainable parameters: {trainable_params:,}")
+
+        # Move to GPU if available
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model = model.to(device)
+        logger.info(f"  Device: {device}")
+
+        logger.info("=" * 70)
+
+        return model
+
+    except Exception as e:
+        logger.error(f"Failed to initialize model: {e}")
+        raise RuntimeError(f"Model initialization failed: {e}") from e
+
+
+# ============================================================================
 # Main Function
 # ============================================================================
 
@@ -566,7 +715,6 @@ def main() -> None:
     Main entry point for training script.
 
     This function will be expanded in subsequent tasks to include:
-    - Model initialization
     - Training loop
     - Evaluation
     - Checkpoint saving
@@ -588,18 +736,24 @@ def main() -> None:
             dataset, num_labels, args
         )
 
+        # Initialize model
+        model = initialize_model(args.model, num_labels, args)
+
+        # Get device
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
         # Placeholder for remaining training implementation
         logger.info("")
         logger.info("Training pipeline will be implemented in subsequent tasks:")
         logger.info("  ✓ Data loading")
         logger.info("  ✓ Tokenization and preprocessing")
-        logger.info("  - Model initialization")
+        logger.info("  ✓ Model initialization")
         logger.info("  - Training loop with optimization")
         logger.info("  - Evaluation and metrics calculation")
         logger.info("  - Checkpoint saving")
         logger.info("  - W&B logging and artifact upload")
         logger.info("")
-        logger.info(f"Ready for training: {num_labels} labels, {len(train_loader)} train batches")
+        logger.info(f"Ready for training on {device}")
 
     except ValueError as e:
         logger.error(f"Configuration error: {e}")
