@@ -65,12 +65,9 @@ INCLUDE_NEUTRAL = True   # Include 'neutral' emotion in visualization
                          # False: shows 27 emotions (excludes neutral)
 
 # Bar style
-BAR_STYLE = 'basic'      # Visualization style (default: 'basic')
-                         # Options:
-                         #   'basic': Simple frequency bars, no multi-label breakdown
-                         #   'stacked': Stacked segments showing 1/2/3+ label breakdown
-                         #   'overlaid': Overlapping transparent bars for comparison
-                         # Files saved as: class_distribution_[style].png
+BAR_STYLE = 'stacked'    # Visualization style (default: 'stacked')
+                         # Note: Only 'stacked' style is supported
+                         # Shows stacked segments for 1/2/3+ label breakdown
 
 # Color scheme
 COLOR_SCHEME = 'default' # Color palette for multi-label categories
@@ -108,9 +105,9 @@ def get_color_scheme(scheme: str = 'default') -> Tuple[str, str, str]:
     """
     schemes = {
         'default': {
-            '1_label': '#2E86AB',      # Blue
-            '2_labels': '#A23B72',     # Purple
-            '3plus_labels': '#F18F01'  # Orange
+            '1_label': '#1f77b4',      # Distinct blue
+            '2_labels': '#ff7f0e',     # Distinct orange
+            '3plus_labels': '#2ca02c'  # Distinct green
         },
         'colorblind': {
             '1_label': '#0173B2',      # Blue (colorblind safe)
@@ -372,7 +369,7 @@ def create_stacked_bar_chart(
     figsize: Tuple[float, float] = (14, 8),
     dpi: int = 300,
     color_scheme: str = 'default'
-) -> str:
+) -> Tuple[str, Dict[str, int]]:
     """
     Create stacked bar chart showing multi-label breakdown per emotion.
 
@@ -388,7 +385,7 @@ def create_stacked_bar_chart(
         color_scheme: Color scheme to use ('default', 'colorblind', 'sequential')
 
     Returns:
-        Absolute path to saved figure
+        Tuple of (absolute path to saved figure, sample counts dict)
     """
     # Sort emotions by total frequency (descending)
     sorted_emotions = sorted(
@@ -415,19 +412,19 @@ def create_stacked_bar_chart(
     # Get colors from scheme
     color_1, color_2, color_3 = get_color_scheme(color_scheme)
 
-    # Create stacked bars with sample counts in labels
+    # Create stacked bars with clean labels (counts printed to console)
     x_pos = np.arange(len(emotions))
     width = 0.8
 
     bars1 = ax.bar(x_pos, one_label, width,
-                   label=f'1 label (n={total_one_label:,})',
+                   label='1 label',
                    color=color_1, alpha=0.9)
     bars2 = ax.bar(x_pos, two_labels, width, bottom=one_label,
-                   label=f'2 labels (n={total_two_labels:,})',
+                   label='2 labels',
                    color=color_2, alpha=0.9)
     bars3 = ax.bar(x_pos, three_plus, width,
                    bottom=np.array(one_label) + np.array(two_labels),
-                   label=f'3+ labels (n={total_three_plus:,})',
+                   label='3+ labels',
                    color=color_3, alpha=0.9)
 
     # Customize appearance
@@ -455,7 +452,14 @@ def create_stacked_bar_chart(
     plt.savefig(output_path, dpi=dpi, bbox_inches='tight')
     plt.close()
 
-    return os.path.abspath(output_path)
+    # Return path and sample counts for documentation
+    sample_counts = {
+        '1_label': total_one_label,
+        '2_labels': total_two_labels,
+        '3plus_labels': total_three_plus
+    }
+
+    return os.path.abspath(output_path), sample_counts
 
 
 def create_overlaid_bar_chart(
@@ -637,24 +641,10 @@ def main() -> None:
     output_filename = '_'.join(filename_parts) + '.png'
     output_path = os.path.join(output_dir, 'figures', output_filename)
 
-    if BAR_STYLE == 'basic':
-        saved_path = create_basic_bar_chart(
-            emotion_frequencies,
-            output_path,
-            figsize=(FIGURE_WIDTH, FIGURE_HEIGHT),
-            dpi=DPI
-        )
-    elif BAR_STYLE == 'stacked':
-        saved_path = create_stacked_bar_chart(
-            emotion_frequencies,
-            multilabel_breakdown,
-            output_path,
-            figsize=(FIGURE_WIDTH, FIGURE_HEIGHT),
-            dpi=DPI,
-            color_scheme=COLOR_SCHEME
-        )
-    elif BAR_STYLE == 'overlaid':
-        saved_path = create_overlaid_bar_chart(
+    # Generate visualization (only stacked style supported)
+    sample_counts = None
+    if BAR_STYLE == 'stacked':
+        saved_path, sample_counts = create_stacked_bar_chart(
             emotion_frequencies,
             multilabel_breakdown,
             output_path,
@@ -663,12 +653,16 @@ def main() -> None:
             color_scheme=COLOR_SCHEME
         )
     else:
-        logger.warning(f"Unknown bar style '{BAR_STYLE}', using 'basic'")
-        saved_path = create_basic_bar_chart(
+        # Fallback to stacked if invalid style specified
+        if BAR_STYLE != 'stacked':
+            logger.warning(f"Only 'stacked' bar style is supported, ignoring '{BAR_STYLE}'")
+        saved_path, sample_counts = create_stacked_bar_chart(
             emotion_frequencies,
+            multilabel_breakdown,
             output_path,
             figsize=(FIGURE_WIDTH, FIGURE_HEIGHT),
-            dpi=DPI
+            dpi=DPI,
+            color_scheme=COLOR_SCHEME
         )
 
     # Report success
@@ -678,11 +672,16 @@ def main() -> None:
     logger.info(f"Figure saved to: {saved_path}")
     logger.info(f"Configuration used:")
     logger.info(f"  - Include neutral: {INCLUDE_NEUTRAL}")
-    logger.info(f"  - Bar style: {BAR_STYLE}")
-    if BAR_STYLE in ['stacked', 'overlaid']:
-        logger.info(f"  - Color scheme: {COLOR_SCHEME}")
+    logger.info(f"  - Bar style: stacked")
+    logger.info(f"  - Color scheme: {COLOR_SCHEME}")
     logger.info(f"  - Figure size: {FIGURE_WIDTH}x{FIGURE_HEIGHT} inches")
     logger.info(f"  - DPI: {DPI}")
+    logger.info("")
+    logger.info("Multi-label sample counts (for documentation):")
+    logger.info(f"  - 1 label samples: {sample_counts['1_label']:,}")
+    logger.info(f"  - 2 labels samples: {sample_counts['2_labels']:,}")
+    logger.info(f"  - 3+ labels samples: {sample_counts['3plus_labels']:,}")
+    logger.info(f"  - Total: {sum(sample_counts.values()):,}")
     logger.info("="*70)
 
     print(f"\nFigure saved to: {saved_path}")
