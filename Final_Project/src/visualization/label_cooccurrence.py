@@ -32,12 +32,13 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # ============================================================================
 
-INCLUDE_NEUTRAL = False  # Include 'neutral' emotion in co-occurrence analysis
+INCLUDE_NEUTRAL = True   # Include 'neutral' emotion in co-occurrence analysis
 GENERATE_HEATMAP = True  # Generate heatmap visualization
 HEATMAP_DPI = 300        # Resolution for heatmap figure
 HEATMAP_FIGSIZE = (16, 14)  # Figure size for heatmap
 MASK_DIAGONAL = True     # Mask diagonal to focus on co-occurrence patterns
 ANNOTATION_THRESHOLD = 50  # Annotate cells with co-occurrence count >= this value
+GENERATE_BOTH_VERSIONS = True  # Generate both annotated and clean versions
 
 
 # ============================================================================
@@ -161,7 +162,8 @@ def create_cooccurrence_heatmap(
     dpi: int = 300,
     include_neutral: bool = True,
     mask_diagonal: bool = True,
-    annotation_threshold: int = 50
+    annotation_threshold: int = 50,
+    show_annotations: bool = True
 ) -> str:
     """
     Create heatmap visualization of label co-occurrence matrix.
@@ -175,6 +177,7 @@ def create_cooccurrence_heatmap(
         include_neutral: Whether neutral was included
         mask_diagonal: Whether to mask diagonal (focuses on co-occurrences)
         annotation_threshold: Annotate cells with count >= this value
+        show_annotations: Whether to show numerical annotations on heatmap
 
     Returns:
         Absolute path to saved figure
@@ -209,21 +212,22 @@ def create_cooccurrence_heatmap(
         annot=False  # Don't annotate all cells (too cluttered)
     )
 
-    # Annotate cells above threshold
-    n = cooccurrence_matrix.shape[0]
-    annotated_count = 0
-    for i in range(n):
-        for j in range(i + 1, n):  # Upper triangle only
-            count = cooccurrence_matrix[i, j]
-            if count >= annotation_threshold:
-                # Annotate both upper and lower triangle for symmetry
-                ax.text(j + 0.5, i + 0.5, str(count),
-                       ha='center', va='center', fontsize=8, fontweight='bold',
-                       color='white')
-                ax.text(i + 0.5, j + 0.5, str(count),
-                       ha='center', va='center', fontsize=8, fontweight='bold',
-                       color='white')
-                annotated_count += 1
+    # Annotate cells above threshold if requested
+    if show_annotations:
+        n = cooccurrence_matrix.shape[0]
+        annotated_count = 0
+        for i in range(n):
+            for j in range(i + 1, n):  # Upper triangle only
+                count = cooccurrence_matrix[i, j]
+                if count >= annotation_threshold:
+                    # Annotate both upper and lower triangle for symmetry
+                    ax.text(j + 0.5, i + 0.5, str(count),
+                           ha='center', va='center', fontsize=8, fontweight='bold',
+                           color='white')
+                    ax.text(i + 0.5, j + 0.5, str(count),
+                           ha='center', va='center', fontsize=8, fontweight='bold',
+                           color='white')
+                    annotated_count += 1
 
     # Customize appearance
     ax.set_xlabel('Emotion', fontsize=14, fontweight='bold', labelpad=10)
@@ -295,29 +299,41 @@ def main() -> None:
     )
     logger.info(f"Co-occurrence matrix saved to: {csv_saved_path}")
 
-    # Generate heatmap if configured
+    # Generate heatmap(s) if configured
     if GENERATE_HEATMAP:
-        logger.info("Generating co-occurrence heatmap...")
+        logger.info("Generating co-occurrence heatmap(s)...")
 
-        # Determine filename based on neutral inclusion
-        if INCLUDE_NEUTRAL:
-            heatmap_filename = '02_label_cooccurrence.png'
-        else:
-            heatmap_filename = '03_label_cooccurrence_no_neutral.png'
-
-        heatmap_path = os.path.join(output_dir, 'figures', heatmap_filename)
-        heatmap_saved_path = create_cooccurrence_heatmap(
+        # Generate annotated version
+        annotated_path = os.path.join(output_dir, 'figures', '02_label_cooccurrence_annotated.png')
+        annotated_saved_path = create_cooccurrence_heatmap(
             cooccurrence_matrix,
             label_names,
-            heatmap_path,
+            annotated_path,
             figsize=HEATMAP_FIGSIZE,
             dpi=HEATMAP_DPI,
             include_neutral=INCLUDE_NEUTRAL,
             mask_diagonal=MASK_DIAGONAL,
-            annotation_threshold=ANNOTATION_THRESHOLD
+            annotation_threshold=ANNOTATION_THRESHOLD,
+            show_annotations=True
         )
-        logger.info(f"Heatmap saved to: {heatmap_saved_path}")
+        logger.info(f"Annotated heatmap saved to: {annotated_saved_path}")
         logger.info(f"Annotation threshold: >= {ANNOTATION_THRESHOLD} co-occurrences")
+
+        # Generate clean version if configured
+        if GENERATE_BOTH_VERSIONS:
+            clean_path = os.path.join(output_dir, 'figures', '02_label_cooccurrence_clean.png')
+            clean_saved_path = create_cooccurrence_heatmap(
+                cooccurrence_matrix,
+                label_names,
+                clean_path,
+                figsize=HEATMAP_FIGSIZE,
+                dpi=HEATMAP_DPI,
+                include_neutral=INCLUDE_NEUTRAL,
+                mask_diagonal=MASK_DIAGONAL,
+                annotation_threshold=ANNOTATION_THRESHOLD,
+                show_annotations=False
+            )
+            logger.info(f"Clean heatmap saved to: {clean_saved_path}")
 
     # Calculate and report statistics
     filtered_labels = label_names if INCLUDE_NEUTRAL else [l for l in label_names if l != 'neutral']
@@ -363,7 +379,9 @@ def main() -> None:
 
     print(f"\nCo-occurrence matrix saved to: {csv_saved_path}")
     if GENERATE_HEATMAP:
-        print(f"Heatmap saved to: {heatmap_saved_path}")
+        print(f"Annotated heatmap saved to: {annotated_saved_path}")
+        if GENERATE_BOTH_VERSIONS:
+            print(f"Clean heatmap saved to: {clean_saved_path}")
 
 
 if __name__ == "__main__":
