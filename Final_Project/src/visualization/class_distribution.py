@@ -335,23 +335,31 @@ def create_stacked_bar_chart(
     two_labels = [multilabel_breakdown[e]['2_labels'] for e in emotions]
     three_plus = [multilabel_breakdown[e]['3plus_labels'] for e in emotions]
 
+    # Calculate total sample counts for legend
+    total_one_label = sum(one_label)
+    total_two_labels = sum(two_labels)
+    total_three_plus = sum(three_plus)
+
     # Create figure
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 
     # Get colors from scheme
     color_1, color_2, color_3 = get_color_scheme(color_scheme)
 
-    # Create stacked bars
+    # Create stacked bars with sample counts in labels
     x_pos = np.arange(len(emotions))
     width = 0.8
 
-    bars1 = ax.bar(x_pos, one_label, width, label='1 label',
+    bars1 = ax.bar(x_pos, one_label, width,
+                   label=f'1 label (n={total_one_label:,})',
                    color=color_1, alpha=0.9)
     bars2 = ax.bar(x_pos, two_labels, width, bottom=one_label,
-                   label='2 labels', color=color_2, alpha=0.9)
+                   label=f'2 labels (n={total_two_labels:,})',
+                   color=color_2, alpha=0.9)
     bars3 = ax.bar(x_pos, three_plus, width,
                    bottom=np.array(one_label) + np.array(two_labels),
-                   label='3+ labels', color=color_3, alpha=0.9)
+                   label=f'3+ labels (n={total_three_plus:,})',
+                   color=color_3, alpha=0.9)
 
     # Customize appearance
     ax.set_xlabel('Emotion', fontsize=12, fontweight='bold')
@@ -420,6 +428,11 @@ def create_overlaid_bar_chart(
     two_labels = [multilabel_breakdown[e]['2_labels'] for e in emotions]
     three_plus = [multilabel_breakdown[e]['3plus_labels'] for e in emotions]
 
+    # Calculate total sample counts for legend
+    total_one_label = sum(one_label)
+    total_two_labels = sum(two_labels)
+    total_three_plus = sum(three_plus)
+
     # Create figure
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 
@@ -431,15 +444,18 @@ def create_overlaid_bar_chart(
     width_base = 0.8
 
     # Widest bar (1 label) at back
-    bars1 = ax.bar(x_pos, one_label, width_base, label='1 label',
+    bars1 = ax.bar(x_pos, one_label, width_base,
+                   label=f'1 label (n={total_one_label:,})',
                    color=color_1, alpha=0.5, zorder=1)
 
     # Medium bar (2 labels) in middle
-    bars2 = ax.bar(x_pos, two_labels, width_base * 0.7, label='2 labels',
+    bars2 = ax.bar(x_pos, two_labels, width_base * 0.7,
+                   label=f'2 labels (n={total_two_labels:,})',
                    color=color_2, alpha=0.6, zorder=2)
 
     # Narrowest bar (3+ labels) at front
-    bars3 = ax.bar(x_pos, three_plus, width_base * 0.5, label='3+ labels',
+    bars3 = ax.bar(x_pos, three_plus, width_base * 0.5,
+                   label=f'3+ labels (n={total_three_plus:,})',
                    color=color_3, alpha=0.7, zorder=3)
 
     # Customize appearance
