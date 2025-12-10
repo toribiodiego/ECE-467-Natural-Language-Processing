@@ -11,6 +11,7 @@ Usage:
 
 import logging
 import os
+import csv
 from pathlib import Path
 from typing import Dict, List, Tuple
 from collections import Counter
@@ -85,6 +86,11 @@ OUTPUT_FILENAME = 'class_distribution.png'
                          # Actual name: class_distribution[_style].png
                          # Location: output/figures/
 
+EXPORT_PER_EMOTION_STATS = True
+                         # Export per-emotion multi-label breakdown to CSV
+                         # True: saves to output/stats/per_emotion_multilabel.csv
+                         # False: skips CSV export (visualization only)
+
 
 # ============================================================================
 # Helper Functions
@@ -124,6 +130,69 @@ def get_color_scheme(scheme: str = 'default') -> Tuple[str, str, str]:
 
     colors = schemes[scheme]
     return (colors['1_label'], colors['2_labels'], colors['3plus_labels'])
+
+
+def export_per_emotion_breakdown(
+    multilabel_breakdown: Dict[str, Dict[str, int]],
+    emotion_frequencies: Dict[str, int],
+    output_path: str
+) -> str:
+    """
+    Export per-emotion multi-label breakdown to CSV file.
+
+    Args:
+        multilabel_breakdown: Dict mapping emotion to label count breakdown
+        emotion_frequencies: Dict mapping emotion to total frequency
+        output_path: Where to save the CSV file
+
+    Returns:
+        Absolute path to saved CSV file
+    """
+    # Sort emotions by total frequency (descending)
+    sorted_emotions = sorted(
+        emotion_frequencies.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    # Prepare CSV data
+    rows = []
+    for emotion, total_freq in sorted_emotions:
+        breakdown = multilabel_breakdown[emotion]
+        one_label = breakdown['1_label']
+        two_labels = breakdown['2_labels']
+        three_plus = breakdown['3plus_labels']
+
+        # Calculate percentages
+        pct_one = (one_label / total_freq * 100) if total_freq > 0 else 0
+        pct_two = (two_labels / total_freq * 100) if total_freq > 0 else 0
+        pct_three = (three_plus / total_freq * 100) if total_freq > 0 else 0
+
+        rows.append({
+            'emotion': emotion,
+            'total_frequency': total_freq,
+            '1_label_count': one_label,
+            '1_label_pct': f'{pct_one:.1f}',
+            '2_labels_count': two_labels,
+            '2_labels_pct': f'{pct_two:.1f}',
+            '3plus_labels_count': three_plus,
+            '3plus_labels_pct': f'{pct_three:.1f}'
+        })
+
+    # Write CSV
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, 'w', newline='', encoding='utf-8') as f:
+        fieldnames = [
+            'emotion', 'total_frequency',
+            '1_label_count', '1_label_pct',
+            '2_labels_count', '2_labels_pct',
+            '3plus_labels_count', '3plus_labels_pct'
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    return os.path.abspath(output_path)
 
 
 # ============================================================================
@@ -526,7 +595,7 @@ def main() -> None:
     logger.info(f"Calculated frequencies for {num_emotions} emotions")
     logger.info(f"Total emotion occurrences: {total_samples:,}")
 
-    # Calculate per-emotion multi-label breakdown (for future use)
+    # Calculate per-emotion multi-label breakdown
     logger.info("Calculating per-emotion multi-label breakdowns...")
     multilabel_breakdown = calculate_per_emotion_multilabel_breakdown(
         dataset,
@@ -535,10 +604,22 @@ def main() -> None:
     )
     logger.info("Multi-label breakdown calculated")
 
+    # Get output directory
+    output_dir = os.getenv('OUTPUT_DIR', 'output')
+
+    # Export per-emotion breakdown if configured
+    if EXPORT_PER_EMOTION_STATS:
+        logger.info("Exporting per-emotion multi-label breakdown to CSV...")
+        csv_path = os.path.join(output_dir, 'stats', 'per_emotion_multilabel.csv')
+        csv_saved_path = export_per_emotion_breakdown(
+            multilabel_breakdown,
+            emotion_frequencies,
+            csv_path
+        )
+        logger.info(f"Per-emotion breakdown saved to: {csv_saved_path}")
+
     # Generate visualization based on BAR_STYLE
     logger.info(f"Generating visualization (style: {BAR_STYLE})...")
-
-    output_dir = os.getenv('OUTPUT_DIR', 'output')
 
     # Modify filename based on bar style for comparison
     base_name = OUTPUT_FILENAME.replace('.png', '')
