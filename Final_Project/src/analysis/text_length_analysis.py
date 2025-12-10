@@ -40,7 +40,7 @@ TOKENIZER_NAME = "roberta-base"
 # Histogram configuration
 GENERATE_HISTOGRAMS = True
 HISTOGRAM_DPI = 300
-HISTOGRAM_FIGSIZE = (14, 10)
+HISTOGRAM_FIGSIZE = (14, 5)  # Width x Height for single row of 3 plots
 CHAR_BINS = 50  # Number of bins for character length histogram
 TOKEN_BINS = 50  # Number of bins for token length histogram
 
@@ -225,94 +225,126 @@ def export_truncation_analysis(
 # Visualization Functions
 # ============================================================================
 
-def create_length_histograms(
+def create_character_histogram(
     split_names: List[str],
     all_char_lengths: Dict[str, List[int]],
-    all_token_lengths: Dict[str, List[int]],
     output_path: str,
-    figsize: Tuple[float, float] = (14, 10),
+    figsize: Tuple[float, float] = (14, 5),
     dpi: int = 300,
-    char_bins: int = 50,
-    token_bins: int = 50
+    char_bins: int = 50
 ) -> str:
     """
-    Create histogram visualizations of text length distributions.
+    Create histogram visualization of character length distributions.
 
     Args:
         split_names: List of split names
         all_char_lengths: Dictionary mapping split to character lengths
-        all_token_lengths: Dictionary mapping split to token lengths
         output_path: Where to save the figure
         figsize: Figure dimensions (width, height) in inches
         dpi: Resolution for saved figure
         char_bins: Number of bins for character histograms
-        token_bins: Number of bins for token histograms
 
     Returns:
         Absolute path to saved figure
     """
-    # Create figure with 2 rows (char, token) x 3 columns (train, val, test)
-    fig, axes = plt.subplots(2, 3, figsize=figsize, dpi=dpi)
+    # Create figure with 1 row x 3 columns (train, val, test)
+    fig, axes = plt.subplots(1, 3, figsize=figsize, dpi=dpi)
 
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Blue, orange, green
 
-    # Plot character length distributions (top row)
+    # Find maximum character length across all splits for unified x-axis
+    max_char_length = max(max(lengths) for lengths in all_char_lengths.values())
+
+    # Plot character length distributions
     for i, split_name in enumerate(split_names):
-        ax = axes[0, i]
+        ax = axes[i]
         char_lengths = all_char_lengths[split_name]
 
         ax.hist(char_lengths, bins=char_bins, color=colors[i],
                 alpha=0.7, edgecolor='black', linewidth=0.5)
         ax.set_xlabel('Character Count', fontsize=11, fontweight='bold')
         ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
-        ax.set_title(f'{split_name.capitalize()} - Characters',
+        ax.set_title(f'{split_name.capitalize()}',
                     fontsize=12, fontweight='bold')
         ax.grid(axis='y', alpha=0.3, linestyle='--')
 
-        # Add statistics text
-        mean = np.mean(char_lengths)
-        median = np.median(char_lengths)
-        q95 = np.percentile(char_lengths, 95)
-        stats_text = f'Mean: {mean:.0f}\nMedian: {median:.0f}\n95th: {q95:.0f}'
-        ax.text(0.97, 0.97, stats_text, transform=ax.transAxes,
-               fontsize=9, verticalalignment='top', horizontalalignment='right',
-               bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+        # Set unified x-axis limit
+        ax.set_xlim(0, max_char_length)
 
-    # Plot token length distributions (bottom row)
+    # Overall title
+    fig.suptitle('Character Length Distributions by Split',
+                fontsize=16, fontweight='bold', y=1.02)
+
+    # Tight layout
+    plt.tight_layout()
+
+    # Save figure
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    plt.savefig(output_path, dpi=dpi, bbox_inches='tight')
+    plt.close()
+
+    return os.path.abspath(output_path)
+
+
+def create_token_histogram(
+    split_names: List[str],
+    all_token_lengths: Dict[str, List[int]],
+    output_path: str,
+    figsize: Tuple[float, float] = (14, 5),
+    dpi: int = 300,
+    token_bins: int = 50
+) -> str:
+    """
+    Create histogram visualization of token length distributions.
+
+    Args:
+        split_names: List of split names
+        all_token_lengths: Dictionary mapping split to token lengths
+        output_path: Where to save the figure
+        figsize: Figure dimensions (width, height) in inches
+        dpi: Resolution for saved figure
+        token_bins: Number of bins for token histograms
+
+    Returns:
+        Absolute path to saved figure
+    """
+    # Create figure with 1 row x 3 columns (train, val, test)
+    fig, axes = plt.subplots(1, 3, figsize=figsize, dpi=dpi)
+
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Blue, orange, green
+
+    # Find maximum token length across all splits for unified x-axis
+    max_token_length = max(max(lengths) for lengths in all_token_lengths.values())
+
+    # Plot token length distributions
     for i, split_name in enumerate(split_names):
-        ax = axes[1, i]
+        ax = axes[i]
         token_lengths = all_token_lengths[split_name]
 
         ax.hist(token_lengths, bins=token_bins, color=colors[i],
                 alpha=0.7, edgecolor='black', linewidth=0.5)
         ax.set_xlabel('Token Count', fontsize=11, fontweight='bold')
         ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
-        ax.set_title(f'{split_name.capitalize()} - Tokens',
+        ax.set_title(f'{split_name.capitalize()}',
                     fontsize=12, fontweight='bold')
         ax.grid(axis='y', alpha=0.3, linestyle='--')
 
-        # Add statistics text
-        mean = np.mean(token_lengths)
-        median = np.median(token_lengths)
-        q95 = np.percentile(token_lengths, 95)
-        stats_text = f'Mean: {mean:.0f}\nMedian: {median:.0f}\n95th: {q95:.0f}'
-        ax.text(0.97, 0.97, stats_text, transform=ax.transAxes,
-               fontsize=9, verticalalignment='top', horizontalalignment='right',
-               bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+        # Set unified x-axis limit
+        ax.set_xlim(0, max_token_length)
 
         # Add vertical lines for common max_seq_length values
-        for max_len, color, label in [(128, 'red', '128'),
-                                       (256, 'orange', '256'),
-                                       (512, 'green', '512')]:
-            ax.axvline(x=max_len, color=color, linestyle='--',
-                      linewidth=1.5, alpha=0.6, label=f'max={label}')
+        for max_len, line_color, label in [(128, '#ff0000', '128'),
+                                            (256, '#ff8c00', '256'),
+                                            (512, '#008000', '512')]:
+            ax.axvline(x=max_len, color=line_color, linestyle='--',
+                      linewidth=2, alpha=0.8, label=f'max={label}')
 
         if i == 2:  # Only add legend to rightmost plot
-            ax.legend(loc='upper right', fontsize=8)
+            ax.legend(loc='upper right', fontsize=9)
 
     # Overall title
-    fig.suptitle('Text Length Distributions by Split',
-                fontsize=16, fontweight='bold', y=0.995)
+    fig.suptitle('Token Length Distributions by Split',
+                fontsize=16, fontweight='bold', y=1.02)
 
     # Tight layout
     plt.tight_layout()
@@ -390,19 +422,29 @@ def main() -> None:
 
     # Generate histograms if configured
     if GENERATE_HISTOGRAMS:
-        logger.info("Generating length distribution histograms...")
-        histogram_path = os.path.join(output_dir, 'figures', '03_text_length_distributions.png')
-        histogram_saved_path = create_length_histograms(
+        logger.info("Generating character length distribution histogram...")
+        char_histogram_path = os.path.join(output_dir, 'figures', '04_character_length_distributions.png')
+        char_histogram_saved_path = create_character_histogram(
             split_names,
             all_char_lengths,
-            all_token_lengths,
-            histogram_path,
+            char_histogram_path,
             figsize=HISTOGRAM_FIGSIZE,
             dpi=HISTOGRAM_DPI,
-            char_bins=CHAR_BINS,
+            char_bins=CHAR_BINS
+        )
+        logger.info(f"Character histogram saved to: {char_histogram_saved_path}")
+
+        logger.info("Generating token length distribution histogram...")
+        token_histogram_path = os.path.join(output_dir, 'figures', '05_token_length_distributions.png')
+        token_histogram_saved_path = create_token_histogram(
+            split_names,
+            all_token_lengths,
+            token_histogram_path,
+            figsize=HISTOGRAM_FIGSIZE,
+            dpi=HISTOGRAM_DPI,
             token_bins=TOKEN_BINS
         )
-        logger.info(f"Histograms saved to: {histogram_saved_path}")
+        logger.info(f"Token histogram saved to: {token_histogram_saved_path}")
 
     # Report summary
     logger.info("="*70)
@@ -437,7 +479,8 @@ def main() -> None:
     print(f"\nStatistics saved to: {stats_saved_path}")
     print(f"Truncation analysis saved to: {trunc_saved_path}")
     if GENERATE_HISTOGRAMS:
-        print(f"Histograms saved to: {histogram_saved_path}")
+        print(f"Character histogram saved to: {char_histogram_saved_path}")
+        print(f"Token histogram saved to: {token_histogram_saved_path}")
 
 
 if __name__ == "__main__":
