@@ -88,6 +88,7 @@ INCLUDE_NEUTRAL = True   # Include 'neutral' emotion in visualization
                          #          File: class_distribution_stacked_no_neutral.png
                          # Recommendation: Create both versions for comparison
                          # Context: Neutral is 3.5x larger than next emotion (admiration)
+                         # See docs/replication.md for detailed neutral handling rationale
 
 # Visualization Style
 # -------------------
