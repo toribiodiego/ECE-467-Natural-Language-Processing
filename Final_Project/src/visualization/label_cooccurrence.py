@@ -195,7 +195,7 @@ def create_cooccurrence_heatmap(
         cooccurrence_matrix,
         xticklabels=filtered_names,
         yticklabels=filtered_names,
-        cmap='viridis_r',  # Reversed: yellow (low) to purple (high)
+        cmap='coolwarm',  # Blue (low) to red (high)
         fmt='d',
         cbar_kws={'label': 'Co-occurrence Count'},
         ax=ax,
