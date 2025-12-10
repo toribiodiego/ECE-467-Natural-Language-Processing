@@ -138,6 +138,17 @@ EXPORT_PER_EMOTION_STATS = True
                          #              1_label_pct, 2_labels_count, 2_labels_pct,
                          #              3plus_labels_count, 3plus_labels_pct
 
+EXPORT_SUPPORTS_BY_SPLIT = True
+                         # Export per-emotion support counts by split to CSV
+                         # Effect:
+                         #   True: Creates output/stats/per_emotion_supports_by_split.csv
+                         #         Contains sample counts for each emotion per split
+                         #         Useful for per-class metric joins and split analysis
+                         #         Adds ~0.2 seconds to execution time
+                         #   False: Skips CSV export (slightly faster iteration)
+                         # CSV columns: emotion, train_count, val_count, test_count,
+                         #              total_count
+
 
 # ============================================================================
 # Helper Functions
@@ -235,6 +246,102 @@ def export_per_emotion_breakdown(
             '2_labels_count', '2_labels_pct',
             '3plus_labels_count', '3plus_labels_pct'
         ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    return os.path.abspath(output_path)
+
+
+def calculate_per_emotion_supports_by_split(
+    dataset,
+    label_names: List[str],
+    include_neutral: bool = True
+) -> Dict[str, Dict[str, int]]:
+    """
+    Calculate per-emotion support counts for each dataset split.
+
+    Args:
+        dataset: DatasetDict with train/validation/test splits
+        label_names: List of emotion label names
+        include_neutral: Whether to include neutral emotion
+
+    Returns:
+        Dictionary mapping emotion name to split counts:
+        {
+            'emotion_name': {
+                'train': count,
+                'validation': count,
+                'test': count,
+                'total': count
+            }
+        }
+    """
+    # Initialize support counts for each emotion
+    supports = {
+        emotion: {'train': 0, 'validation': 0, 'test': 0, 'total': 0}
+        for emotion in label_names
+        if include_neutral or emotion != 'neutral'
+    }
+
+    # Count occurrences per split
+    for split_name in ['train', 'validation', 'test']:
+        if split_name not in dataset:
+            continue
+
+        split = dataset[split_name]
+
+        for sample in split:
+            # sample['labels'] is a list of label indices
+            for label_idx in sample['labels']:
+                emotion = label_names[label_idx]
+
+                # Skip neutral if configured
+                if not include_neutral and emotion == 'neutral':
+                    continue
+
+                supports[emotion][split_name] += 1
+                supports[emotion]['total'] += 1
+
+    return supports
+
+
+def export_per_emotion_supports_by_split(
+    supports_by_split: Dict[str, Dict[str, int]],
+    output_path: str
+) -> str:
+    """
+    Export per-emotion support counts by split to CSV file.
+
+    Args:
+        supports_by_split: Dict mapping emotion to split counts
+        output_path: Where to save the CSV file
+
+    Returns:
+        Absolute path to saved CSV file
+    """
+    # Sort emotions by total count (descending)
+    sorted_emotions = sorted(
+        supports_by_split.items(),
+        key=lambda x: x[1]['total'],
+        reverse=True
+    )
+
+    # Prepare CSV data
+    rows = []
+    for emotion, counts in sorted_emotions:
+        rows.append({
+            'emotion': emotion,
+            'train_count': counts['train'],
+            'val_count': counts['validation'],
+            'test_count': counts['test'],
+            'total_count': counts['total']
+        })
+
+    # Write CSV
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, 'w', newline='', encoding='utf-8') as f:
+        fieldnames = ['emotion', 'train_count', 'val_count', 'test_count', 'total_count']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
@@ -671,6 +778,24 @@ def main() -> None:
             csv_path
         )
         logger.info(f"Per-emotion breakdown saved to: {csv_saved_path}")
+
+    # Export per-emotion supports by split if configured
+    if EXPORT_SUPPORTS_BY_SPLIT:
+        logger.info("Calculating per-emotion support counts by split...")
+        supports_by_split = calculate_per_emotion_supports_by_split(
+            dataset,
+            label_names,
+            include_neutral=INCLUDE_NEUTRAL
+        )
+        logger.info("Support counts calculated")
+
+        logger.info("Exporting per-emotion supports by split to CSV...")
+        csv_path = os.path.join(output_dir, 'stats', 'per_emotion_supports_by_split.csv')
+        csv_saved_path = export_per_emotion_supports_by_split(
+            supports_by_split,
+            csv_path
+        )
+        logger.info(f"Per-emotion supports by split saved to: {csv_saved_path}")
 
     # Generate visualization based on BAR_STYLE
     logger.info(f"Generating visualization (style: {BAR_STYLE})...")
