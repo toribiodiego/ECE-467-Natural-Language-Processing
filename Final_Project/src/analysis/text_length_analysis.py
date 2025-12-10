@@ -236,9 +236,9 @@ def create_character_histogram(
     """
     Create histogram visualization of character length distributions.
 
-    Uses 99th percentile for x-axis limit to focus on main distribution
-    while excluding extreme outliers. All three splits use the same x-axis
-    scale for accurate visual comparison.
+    Uses 99.9th percentile for x-axis limit to show 99.9% of data while
+    excluding only the most extreme 0.1% outliers. All three splits use
+    the same x-axis scale for accurate visual comparison.
 
     Args:
         split_names: List of split names
@@ -256,11 +256,12 @@ def create_character_histogram(
 
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Blue, orange, green
 
-    # Use 99th percentile for x-axis limit to avoid outlier distortion
+    # Use 99.9th percentile for x-axis limit (shows 99.9% of data)
+    # This balances completeness with avoiding extreme outlier distortion
     all_lengths = []
     for lengths in all_char_lengths.values():
         all_lengths.extend(lengths)
-    max_char_length = np.percentile(all_lengths, 99)
+    max_char_length = np.percentile(all_lengths, 99.9)
 
     # Plot character length distributions
     for i, split_name in enumerate(split_names):
@@ -282,7 +283,7 @@ def create_character_histogram(
         ax.set_xlim(0, max_char_length)
 
     # Overall title
-    fig.suptitle('Character Length Distributions by Split',
+    fig.suptitle('Character Length Distributions by Split (99.9% of data)',
                 fontsize=16, fontweight='bold', y=1.02)
 
     # Tight layout
@@ -307,10 +308,10 @@ def create_token_histogram(
     """
     Create histogram visualization of token length distributions.
 
-    Uses a fixed x-axis limit of 60 tokens to properly visualize the
-    distribution while excluding extreme outliers (max 1437 tokens in train).
-    This covers >99.5% of all samples and provides clear visibility of the
-    distribution shape. All three splits use the same scale for comparison.
+    Uses 99.9th percentile for x-axis limit to show 99.9% of data while
+    excluding only the most extreme 0.1% outliers (e.g., max 1437 tokens
+    in train split). All three splits use the same x-axis scale for
+    accurate visual comparison.
 
     Args:
         split_names: List of split names
@@ -328,9 +329,12 @@ def create_token_histogram(
 
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Blue, orange, green
 
-    # Use 60 tokens as upper limit for better visualization
-    # This shows >99.5% of data while providing clear distribution visibility
-    max_token_length = 60
+    # Use 99.9th percentile for x-axis limit (shows 99.9% of data)
+    # This balances completeness with avoiding extreme outlier distortion
+    all_lengths = []
+    for lengths in all_token_lengths.values():
+        all_lengths.extend(lengths)
+    max_token_length = np.percentile(all_lengths, 99.9)
 
     # Plot token length distributions
     for i, split_name in enumerate(split_names):
@@ -352,7 +356,7 @@ def create_token_histogram(
         ax.set_xlim(0, max_token_length)
 
     # Overall title
-    fig.suptitle('Token Length Distributions by Split',
+    fig.suptitle('Token Length Distributions by Split (99.9% of data)',
                 fontsize=16, fontweight='bold', y=1.02)
 
     # Tight layout
