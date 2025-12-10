@@ -30,6 +30,7 @@ from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_sco
 
 from src.data.load_dataset import get_dataset_statistics
 from src.training.data_utils import load_dataset_with_limits, create_dataloaders
+from src.training.metrics_utils import evaluate_with_threshold, log_evaluation_results
 
 
 # Configure logging
@@ -771,59 +772,37 @@ def evaluate_model(
     # Apply sigmoid to get probabilities
     all_probs = 1 / (1 + np.exp(-all_logits_np))
 
-    # Compute binary predictions (threshold = 0.5)
-    all_preds = (all_probs >= 0.5).astype(int)
-
     logger.info(f"Number of samples: {len(all_labels_np)}")
     logger.info(f"Number of labels: {len(label_names)}")
-    logger.info("")
 
-    # Compute AUC score (micro-averaged)
-    try:
-        auc = roc_auc_score(all_labels_np, all_probs, average='micro')
-        logger.info(f"AUC (micro): {auc:.4f}")
-    except ValueError as e:
-        logger.warning(f"Could not compute AUC: {e}")
-        auc = 0.0
+    # Use metrics utilities for comprehensive evaluation
+    results = evaluate_with_threshold(
+        y_true=all_labels_np,
+        y_probs=all_probs,
+        label_names=label_names,
+        threshold=0.5,
+        compute_pr_curves_flag=False,
+        compute_confusion=True
+    )
 
-    # Compute macro and micro averaged metrics
-    macro_f1 = f1_score(all_labels_np, all_preds, average='macro', zero_division=0)
-    micro_f1 = f1_score(all_labels_np, all_preds, average='micro', zero_division=0)
-    macro_precision = precision_score(all_labels_np, all_preds, average='macro', zero_division=0)
-    micro_precision = precision_score(all_labels_np, all_preds, average='micro', zero_division=0)
-    macro_recall = recall_score(all_labels_np, all_preds, average='macro', zero_division=0)
-    micro_recall = recall_score(all_labels_np, all_preds, average='micro', zero_division=0)
+    # Log results using the utility function
+    log_evaluation_results(results, logger_instance=logger)
 
-    logger.info("")
-    logger.info("Aggregate Metrics:")
-    logger.info(f"  Macro F1:        {macro_f1:.4f}")
-    logger.info(f"  Micro F1:        {micro_f1:.4f}")
-    logger.info(f"  Macro Precision: {macro_precision:.4f}")
-    logger.info(f"  Micro Precision: {micro_precision:.4f}")
-    logger.info(f"  Macro Recall:    {macro_recall:.4f}")
-    logger.info(f"  Micro Recall:    {micro_recall:.4f}")
-
-    # Compute per-class F1 scores
-    per_class_f1_scores = f1_score(all_labels_np, all_preds, average=None, zero_division=0)
-    per_class_f1 = {label_names[i]: float(per_class_f1_scores[i]) for i in range(len(label_names))}
-
-    logger.info("")
-    logger.info("Per-Class F1 Scores:")
-    for label, score in sorted(per_class_f1.items(), key=lambda x: x[1], reverse=True):
-        logger.info(f"  {label:20s}: {score:.4f}")
-
-    logger.info("=" * 70)
-
-    # Return metrics dictionary
+    # Return metrics in backward-compatible format
     metrics = {
-        'auc': float(auc),
-        'macro_f1': float(macro_f1),
-        'micro_f1': float(micro_f1),
-        'macro_precision': float(macro_precision),
-        'micro_precision': float(micro_precision),
-        'macro_recall': float(macro_recall),
-        'micro_recall': float(micro_recall),
-        'per_class_f1': per_class_f1
+        'auc': results.get('auc_micro', 0.0),
+        'auc_micro': results.get('auc_micro', 0.0),
+        'auc_macro': results.get('auc_macro', 0.0),
+        'macro_f1': results.get('f1_macro', 0.0),
+        'micro_f1': results.get('f1_micro', 0.0),
+        'macro_precision': results.get('precision_macro', 0.0),
+        'micro_precision': results.get('precision_micro', 0.0),
+        'macro_recall': results.get('recall_macro', 0.0),
+        'micro_recall': results.get('recall_micro', 0.0),
+        'per_class_f1': results.get('per_class_f1', {}),
+        'per_class_precision': results.get('per_class_precision', {}),
+        'per_class_recall': results.get('per_class_recall', {}),
+        'confusion_summary': results.get('confusion_summary', {})
     }
 
     return metrics
