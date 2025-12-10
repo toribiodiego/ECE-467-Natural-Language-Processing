@@ -36,57 +36,107 @@ logger = logging.getLogger(__name__)
 #
 # This section contains all configurable parameters for the visualization.
 # Simply modify the values below and rerun the script to see changes.
-# The script uses cached dataset (no redownload), so iteration is fast (<10s).
+# The script uses cached dataset (no redownload), so iteration is fast (~10s).
 #
-# Usage:
+# Quick Start:
 #   1. Edit configuration values below
 #   2. Run: python -m src.visualization.class_distribution
-#   3. View output at: output/figures/class_distribution[_style].png
+#   3. View output at: output/figures/class_distribution_stacked[_no_neutral].png
 #   4. Repeat to refine visualization
+#
+# Performance:
+#   - First run: ~30-40 seconds (downloads dataset)
+#   - Subsequent runs: ~8-10 seconds (uses cached dataset)
 # ============================================================================
 
-# Figure settings
+# Figure Dimensions
+# -----------------
+# Controls the size of the output image. Larger dimensions provide more space
+# for labels and details but increase file size.
+
 FIGURE_WIDTH = 14        # Width in inches (default: 14)
-                         # Larger values give more space for emotion labels
-                         # Recommended range: 10-20 inches
+                         # Effect: Wider figures give more horizontal space for
+                         #         emotion labels on x-axis, reducing overlap
+                         # Recommended: 10-20 inches
+                         # Example: 14 inches works well for 28 emotions
 
 FIGURE_HEIGHT = 8        # Height in inches (default: 8)
-                         # Taller figures emphasize bar heights
-                         # Recommended range: 6-12 inches
+                         # Effect: Taller figures emphasize bar height differences
+                         #         and provide more vertical space for y-axis scale
+                         # Recommended: 6-12 inches
+                         # Example: 8 inches provides good aspect ratio at 14" width
 
 DPI = 300                # Resolution for saved figure (default: 300)
-                         # 300 DPI is publication quality
-                         # Use 150 for drafts, 600 for print
-
-# Data filtering
-INCLUDE_NEUTRAL = True   # Include 'neutral' emotion in visualization
-                         # Set to False to exclude (neutral is overrepresented)
-                         # True: shows all 28 emotions
-                         # False: shows 27 emotions (excludes neutral)
-
-# Bar style
-BAR_STYLE = 'stacked'    # Visualization style (default: 'stacked')
-                         # Note: Only 'stacked' style is supported
-                         # Shows stacked segments for 1/2/3+ label breakdown
-
-# Color scheme
-COLOR_SCHEME = 'default' # Color palette for multi-label categories
+                         # Effect: Higher DPI = sharper image, larger file size
                          # Options:
-                         #   'default': Blue/Purple/Orange (high contrast)
-                         #   'colorblind': Colorblind-friendly palette
-                         #   'sequential': Single-hue sequential scale
-                         # Note: Only applies to 'stacked' and 'overlaid' styles
+                         #   150 DPI: Draft quality, smaller files (~150KB)
+                         #   300 DPI: Publication quality, medium files (~250KB)
+                         #   600 DPI: Print quality, larger files (~500KB+)
+                         # Note: DPI does not affect displayed size, only quality
 
-# Output
+# Data Filtering
+# --------------
+# Controls which emotions are included in the visualization.
+
+INCLUDE_NEUTRAL = True   # Include 'neutral' emotion in visualization
+                         # Effect on output:
+                         #   True: Shows all 28 emotions (17,772 neutral samples)
+                         #         Y-axis scales to ~18,000, compressing smaller emotions
+                         #         File: class_distribution_stacked.png
+                         #   False: Shows 27 emotions (excludes neutral)
+                         #          Y-axis scales to ~5,000, better visibility of patterns
+                         #          File: class_distribution_stacked_no_neutral.png
+                         # Recommendation: Create both versions for comparison
+                         # Context: Neutral is 3.5x larger than next emotion (admiration)
+
+# Visualization Style
+# -------------------
+# Controls how multi-label breakdown is displayed.
+
+BAR_STYLE = 'stacked'    # Visualization style (default: 'stacked')
+                         # Effect: Shows each emotion as a stacked bar with segments for
+                         #         1-label (blue), 2-labels (orange), 3+ labels (green)
+                         # Note: Only 'stacked' style is currently supported
+                         #       (basic and overlaid styles have been deprecated)
+
+# Color Scheme
+# ------------
+# Controls the color palette used for multi-label categories.
+
+COLOR_SCHEME = 'default' # Color palette for multi-label categories
+                         # Effect on output:
+                         #   'default': Blue (#1f77b4), Orange (#ff7f0e), Green (#2ca02c)
+                         #              High contrast, works well for most displays
+                         #   'colorblind': Blue/Orange/Green optimized for colorblindness
+                         #                 (Okabe-Ito palette, safe for deuteranopia)
+                         #   'sequential': Dark/Medium/Light blue gradient
+                         #                 Single-hue scale, good for grayscale printing
+                         # Recommendation: Use 'colorblind' for accessibility
+
+# Output Configuration
+# --------------------
+# Controls file naming and additional exports.
+
 OUTPUT_FILENAME = 'class_distribution.png'
                          # Base filename for saved figure
-                         # Actual name: class_distribution[_style].png
+                         # Effect: Final filename includes modifiers:
+                         #   - Style: Always appends '_stacked'
+                         #   - Neutral: Appends '_no_neutral' when INCLUDE_NEUTRAL=False
+                         # Examples:
+                         #   'class_distribution.png' → 'class_distribution_stacked.png'
+                         #   (no neutral) → 'class_distribution_stacked_no_neutral.png'
                          # Location: output/figures/
 
 EXPORT_PER_EMOTION_STATS = True
                          # Export per-emotion multi-label breakdown to CSV
-                         # True: saves to output/stats/per_emotion_multilabel.csv
-                         # False: skips CSV export (visualization only)
+                         # Effect:
+                         #   True: Creates output/stats/per_emotion_multilabel.csv
+                         #         Contains counts and percentages for each emotion
+                         #         Adds ~0.1 seconds to execution time
+                         #   False: Skips CSV export (slightly faster iteration)
+                         # CSV columns: emotion, total_frequency, 1_label_count,
+                         #              1_label_pct, 2_labels_count, 2_labels_pct,
+                         #              3plus_labels_count, 3plus_labels_pct
 
 
 # ============================================================================
