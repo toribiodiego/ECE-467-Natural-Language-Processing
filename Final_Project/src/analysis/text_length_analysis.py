@@ -289,7 +289,7 @@ def create_character_histogram(
     fig.text(0.5, 0.02, 'Character Count', ha='center', fontsize=11, fontweight='bold')
 
     # Overall title
-    fig.suptitle('Character Length by Split',
+    fig.suptitle('Character Length',
                 fontsize=16, fontweight='bold', y=0.98)
 
     # Tight layout
@@ -368,7 +368,7 @@ def create_token_histogram(
     fig.text(0.5, 0.02, 'Token Count', ha='center', fontsize=11, fontweight='bold')
 
     # Overall title
-    fig.suptitle('Token Length by Split',
+    fig.suptitle('Token Length',
                 fontsize=16, fontweight='bold', y=0.98)
 
     # Tight layout
