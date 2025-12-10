@@ -665,6 +665,11 @@ def main() -> None:
             color_scheme=COLOR_SCHEME
         )
 
+    # Calculate emotion ranking for documentation
+    sorted_emotions = sorted(emotion_frequencies.items(), key=lambda x: x[1], reverse=True)
+    largest_emotion = sorted_emotions[0]
+    second_largest = sorted_emotions[1]
+
     # Report success
     logger.info("="*70)
     logger.info("Visualization complete!")
@@ -682,6 +687,17 @@ def main() -> None:
     logger.info(f"  - 2 labels samples: {sample_counts['2_labels']:,}")
     logger.info(f"  - 3+ labels samples: {sample_counts['3plus_labels']:,}")
     logger.info(f"  - Total: {sum(sample_counts.values()):,}")
+    logger.info("")
+    logger.info("Emotion class distribution (for documentation):")
+    logger.info(f"  - Largest emotion: '{largest_emotion[0]}' with {largest_emotion[1]:,} samples")
+    logger.info(f"  - Second largest: '{second_largest[0]}' with {second_largest[1]:,} samples")
+    if largest_emotion[0] == 'neutral':
+        ratio = largest_emotion[1] / second_largest[1]
+        logger.info(f"  - Ratio: neutral is {ratio:.1f}x larger than {second_largest[0]}")
+        logger.info(f"  - Note: Neutral's dominance ({largest_emotion[1]:,} samples) causes y-axis")
+        logger.info(f"    scaling issues, making smaller emotions difficult to interpret.")
+        logger.info(f"    Visualizations without neutral enable better examination of")
+        logger.info(f"    multi-label patterns in the remaining {len(emotion_frequencies)-1} emotions.")
     logger.info("="*70)
 
     print(f"\nFigure saved to: {saved_path}")
