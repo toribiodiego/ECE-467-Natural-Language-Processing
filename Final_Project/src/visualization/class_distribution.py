@@ -32,26 +32,98 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # CONFIGURATION - Modify these variables to iterate on visualization design
 # ============================================================================
+#
+# This section contains all configurable parameters for the visualization.
+# Simply modify the values below and rerun the script to see changes.
+# The script uses cached dataset (no redownload), so iteration is fast (<10s).
+#
+# Usage:
+#   1. Edit configuration values below
+#   2. Run: python -m src.visualization.class_distribution
+#   3. View output at: output/figures/class_distribution[_style].png
+#   4. Repeat to refine visualization
+# ============================================================================
 
 # Figure settings
-FIGURE_WIDTH = 14        # Width in inches
-FIGURE_HEIGHT = 8        # Height in inches
-DPI = 300                # Resolution for saved figure
+FIGURE_WIDTH = 14        # Width in inches (default: 14)
+                         # Larger values give more space for emotion labels
+                         # Recommended range: 10-20 inches
+
+FIGURE_HEIGHT = 8        # Height in inches (default: 8)
+                         # Taller figures emphasize bar heights
+                         # Recommended range: 6-12 inches
+
+DPI = 300                # Resolution for saved figure (default: 300)
+                         # 300 DPI is publication quality
+                         # Use 150 for drafts, 600 for print
 
 # Data filtering
-INCLUDE_NEUTRAL = True   # Set to False to exclude 'neutral' emotion
+INCLUDE_NEUTRAL = True   # Include 'neutral' emotion in visualization
+                         # Set to False to exclude (neutral is overrepresented)
+                         # True: shows all 28 emotions
+                         # False: shows 27 emotions (excludes neutral)
 
 # Bar style
-BAR_STYLE = 'basic'      # Options: 'basic', 'stacked', 'overlaid'
-                         # 'basic': simple frequency bars
-                         # 'stacked': show 1-label/2-label/3+ stacked within each bar
-                         # 'overlaid': semi-transparent overlapping layers
+BAR_STYLE = 'basic'      # Visualization style (default: 'basic')
+                         # Options:
+                         #   'basic': Simple frequency bars, no multi-label breakdown
+                         #   'stacked': Stacked segments showing 1/2/3+ label breakdown
+                         #   'overlaid': Overlapping transparent bars for comparison
+                         # Files saved as: class_distribution_[style].png
 
 # Color scheme
-COLOR_SCHEME = 'default' # Options: 'default', 'colorblind', 'sequential'
+COLOR_SCHEME = 'default' # Color palette for multi-label categories
+                         # Options:
+                         #   'default': Blue/Purple/Orange (high contrast)
+                         #   'colorblind': Colorblind-friendly palette
+                         #   'sequential': Single-hue sequential scale
+                         # Note: Only applies to 'stacked' and 'overlaid' styles
 
 # Output
 OUTPUT_FILENAME = 'class_distribution.png'
+                         # Base filename for saved figure
+                         # Actual name: class_distribution[_style].png
+                         # Location: output/figures/
+
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+def get_color_scheme(scheme: str = 'default') -> Tuple[str, str, str]:
+    """
+    Get color palette for multi-label visualization.
+
+    Args:
+        scheme: Color scheme name ('default', 'colorblind', 'sequential')
+
+    Returns:
+        Tuple of (color_1label, color_2labels, color_3plus)
+    """
+    schemes = {
+        'default': {
+            '1_label': '#2E86AB',      # Blue
+            '2_labels': '#A23B72',     # Purple
+            '3plus_labels': '#F18F01'  # Orange
+        },
+        'colorblind': {
+            '1_label': '#0173B2',      # Blue (colorblind safe)
+            '2_labels': '#DE8F05',     # Orange (colorblind safe)
+            '3plus_labels': '#029E73'  # Green (colorblind safe)
+        },
+        'sequential': {
+            '1_label': '#084594',      # Dark blue
+            '2_labels': '#4292C6',     # Medium blue
+            '3plus_labels': '#9ECAE1'  # Light blue
+        }
+    }
+
+    if scheme not in schemes:
+        logger.warning(f"Unknown color scheme '{scheme}', using 'default'")
+        scheme = 'default'
+
+    colors = schemes[scheme]
+    return (colors['1_label'], colors['2_labels'], colors['3plus_labels'])
 
 
 # ============================================================================
@@ -229,7 +301,8 @@ def create_stacked_bar_chart(
     multilabel_breakdown: Dict[str, Dict[str, int]],
     output_path: str,
     figsize: Tuple[float, float] = (14, 8),
-    dpi: int = 300
+    dpi: int = 300,
+    color_scheme: str = 'default'
 ) -> str:
     """
     Create stacked bar chart showing multi-label breakdown per emotion.
@@ -243,6 +316,7 @@ def create_stacked_bar_chart(
         output_path: Where to save the figure
         figsize: Figure dimensions (width, height) in inches
         dpi: Resolution for saved figure
+        color_scheme: Color scheme to use ('default', 'colorblind', 'sequential')
 
     Returns:
         Absolute path to saved figure
@@ -264,10 +338,8 @@ def create_stacked_bar_chart(
     # Create figure
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 
-    # Define colors for each category
-    color_1 = '#2E86AB'      # Blue - single label
-    color_2 = '#A23B72'      # Purple - two labels
-    color_3 = '#F18F01'      # Orange - three+ labels
+    # Get colors from scheme
+    color_1, color_2, color_3 = get_color_scheme(color_scheme)
 
     # Create stacked bars
     x_pos = np.arange(len(emotions))
@@ -314,7 +386,8 @@ def create_overlaid_bar_chart(
     multilabel_breakdown: Dict[str, Dict[str, int]],
     output_path: str,
     figsize: Tuple[float, float] = (14, 8),
-    dpi: int = 300
+    dpi: int = 300,
+    color_scheme: str = 'default'
 ) -> str:
     """
     Create overlaid bar chart showing multi-label breakdown per emotion.
@@ -328,6 +401,7 @@ def create_overlaid_bar_chart(
         output_path: Where to save the figure
         figsize: Figure dimensions (width, height) in inches
         dpi: Resolution for saved figure
+        color_scheme: Color scheme to use ('default', 'colorblind', 'sequential')
 
     Returns:
         Absolute path to saved figure
@@ -349,10 +423,8 @@ def create_overlaid_bar_chart(
     # Create figure
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 
-    # Define colors for each category
-    color_1 = '#2E86AB'      # Blue - single label
-    color_2 = '#A23B72'      # Purple - two labels
-    color_3 = '#F18F01'      # Orange - three+ labels
+    # Get colors from scheme
+    color_1, color_2, color_3 = get_color_scheme(color_scheme)
 
     # Create overlaid bars with different widths for visual separation
     x_pos = np.arange(len(emotions))
@@ -451,7 +523,15 @@ def main() -> None:
     logger.info(f"Generating visualization (style: {BAR_STYLE})...")
 
     output_dir = os.getenv('OUTPUT_DIR', 'output')
-    output_path = os.path.join(output_dir, 'figures', OUTPUT_FILENAME)
+
+    # Modify filename based on bar style for comparison
+    base_name = OUTPUT_FILENAME.replace('.png', '')
+    if BAR_STYLE != 'basic':
+        output_filename = f"{base_name}_{BAR_STYLE}.png"
+    else:
+        output_filename = OUTPUT_FILENAME
+
+    output_path = os.path.join(output_dir, 'figures', output_filename)
 
     if BAR_STYLE == 'basic':
         saved_path = create_basic_bar_chart(
@@ -466,7 +546,8 @@ def main() -> None:
             multilabel_breakdown,
             output_path,
             figsize=(FIGURE_WIDTH, FIGURE_HEIGHT),
-            dpi=DPI
+            dpi=DPI,
+            color_scheme=COLOR_SCHEME
         )
     elif BAR_STYLE == 'overlaid':
         saved_path = create_overlaid_bar_chart(
@@ -474,7 +555,8 @@ def main() -> None:
             multilabel_breakdown,
             output_path,
             figsize=(FIGURE_WIDTH, FIGURE_HEIGHT),
-            dpi=DPI
+            dpi=DPI,
+            color_scheme=COLOR_SCHEME
         )
     else:
         logger.warning(f"Unknown bar style '{BAR_STYLE}', using 'basic'")
@@ -493,6 +575,8 @@ def main() -> None:
     logger.info(f"Configuration used:")
     logger.info(f"  - Include neutral: {INCLUDE_NEUTRAL}")
     logger.info(f"  - Bar style: {BAR_STYLE}")
+    if BAR_STYLE in ['stacked', 'overlaid']:
+        logger.info(f"  - Color scheme: {COLOR_SCHEME}")
     logger.info(f"  - Figure size: {FIGURE_WIDTH}x{FIGURE_HEIGHT} inches")
     logger.info(f"  - DPI: {DPI}")
     logger.info("="*70)
