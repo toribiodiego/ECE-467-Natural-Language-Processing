@@ -37,6 +37,7 @@ GENERATE_HEATMAP = True  # Generate heatmap visualization
 HEATMAP_DPI = 300        # Resolution for heatmap figure
 HEATMAP_FIGSIZE = (16, 14)  # Figure size for heatmap
 MASK_DIAGONAL = True     # Mask diagonal to focus on co-occurrence patterns
+ANNOTATION_THRESHOLD = 50  # Annotate cells with co-occurrence count >= this value
 
 
 # ============================================================================
@@ -159,7 +160,8 @@ def create_cooccurrence_heatmap(
     figsize: Tuple[float, float] = (16, 14),
     dpi: int = 300,
     include_neutral: bool = True,
-    mask_diagonal: bool = True
+    mask_diagonal: bool = True,
+    annotation_threshold: int = 50
 ) -> str:
     """
     Create heatmap visualization of label co-occurrence matrix.
@@ -172,6 +174,7 @@ def create_cooccurrence_heatmap(
         dpi: Resolution for saved figure
         include_neutral: Whether neutral was included
         mask_diagonal: Whether to mask diagonal (focuses on co-occurrences)
+        annotation_threshold: Annotate cells with count >= this value
 
     Returns:
         Absolute path to saved figure
@@ -206,28 +209,21 @@ def create_cooccurrence_heatmap(
         annot=False  # Don't annotate all cells (too cluttered)
     )
 
-    # Find and annotate top co-occurrence pairs
+    # Annotate cells above threshold
     n = cooccurrence_matrix.shape[0]
-    top_pairs = []
+    annotated_count = 0
     for i in range(n):
         for j in range(i + 1, n):  # Upper triangle only
             count = cooccurrence_matrix[i, j]
-            if count > 0:
-                top_pairs.append((i, j, count, filtered_names[i], filtered_names[j]))
-
-    # Sort by count and get top 10
-    top_pairs.sort(key=lambda x: x[2], reverse=True)
-    top_10_pairs = top_pairs[:10]
-
-    # Annotate top pairs on the heatmap with white text
-    for i, j, count, _, _ in top_10_pairs:
-        # Annotate both upper and lower triangle for symmetry
-        ax.text(j + 0.5, i + 0.5, str(count),
-               ha='center', va='center', fontsize=8, fontweight='bold',
-               color='white')
-        ax.text(i + 0.5, j + 0.5, str(count),
-               ha='center', va='center', fontsize=8, fontweight='bold',
-               color='white')
+            if count >= annotation_threshold:
+                # Annotate both upper and lower triangle for symmetry
+                ax.text(j + 0.5, i + 0.5, str(count),
+                       ha='center', va='center', fontsize=8, fontweight='bold',
+                       color='white')
+                ax.text(i + 0.5, j + 0.5, str(count),
+                       ha='center', va='center', fontsize=8, fontweight='bold',
+                       color='white')
+                annotated_count += 1
 
     # Customize appearance
     ax.set_xlabel('Emotion', fontsize=14, fontweight='bold', labelpad=10)
@@ -317,9 +313,11 @@ def main() -> None:
             figsize=HEATMAP_FIGSIZE,
             dpi=HEATMAP_DPI,
             include_neutral=INCLUDE_NEUTRAL,
-            mask_diagonal=MASK_DIAGONAL
+            mask_diagonal=MASK_DIAGONAL,
+            annotation_threshold=ANNOTATION_THRESHOLD
         )
         logger.info(f"Heatmap saved to: {heatmap_saved_path}")
+        logger.info(f"Annotation threshold: >= {ANNOTATION_THRESHOLD} co-occurrences")
 
     # Calculate and report statistics
     filtered_labels = label_names if INCLUDE_NEUTRAL else [l for l in label_names if l != 'neutral']
