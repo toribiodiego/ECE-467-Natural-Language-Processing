@@ -265,76 +265,13 @@ The module generates:
 - `output/stats/per_emotion_multilabel.csv` - Per-emotion multi-label breakdown
 - `output/stats/per_emotion_supports_by_split.csv` - Per-emotion counts by train/val/test split
 
-#### Understanding the Neutral Emotion Exclusion
+**Performance:**
+- First run: ~30-40 seconds (downloads dataset)
+- Subsequent runs: ~8-10 seconds (uses cached dataset)
 
-The module generates two versions of the bar chart visualization: one with all 28 emotions and one with 27 emotions (excluding neutral). This is done for visual clarity purposes only.
+**For detailed analysis of the dataset statistics and CSV file specifications, see `dataset_analysis.md`.**
 
-**Neutral Emotion Multi-Label Distribution:**
-- Total samples: 17,772 (3.5x larger than admiration, the next largest emotion)
-- Single-label: 16,021 (90.1%) - highest single-label rate among all emotions
-- Two-label: 1,671 (9.4%)
-- Three+ label: 80 (0.5%) - lowest multi-label rate
-
-**Why Generate Two Visualizations?**
-
-Neutral's dominance (17,772 samples vs. 5,122 for admiration) causes the y-axis to scale to approximately 18,000, which compresses the visualization of the other 27 emotions and makes their multi-label patterns difficult to see. The second visualization (excluding neutral) allows the y-axis to scale to approximately 5,000, providing better visibility of patterns in the remaining emotions.
-
-**Important Clarifications:**
-- Neutral is retained in ALL dataset processing and training
-- Neutral is included in ALL CSV exports
-- The exclusion ONLY affects bar chart rendering for improved visual clarity
-- Both visualizations are generated automatically for comparison
-
-#### CSV Output Files
-
-**Per-Emotion Multi-Label Statistics:**
-
-**Location:** `output/stats/per_emotion_multilabel.csv`
-
-**Format:**
-```csv
-emotion,total_frequency,1_label_count,1_label_pct,2_labels_count,2_labels_pct,3plus_labels_count,3plus_labels_pct
-neutral,17772,16021,90.1,1671,9.4,80,0.5
-admiration,5122,3384,66.1,1531,29.9,207,4.0
-approval,3687,2367,64.2,1190,32.3,130,3.5
-...
-```
-
-**Columns:**
-- `emotion`: Emotion category name
-- `total_frequency`: Total number of samples containing this emotion
-- `1_label_count`: Number of samples with only this emotion (single-label)
-- `1_label_pct`: Percentage of samples that are single-label
-- `2_labels_count`: Number of samples with exactly 2 emotions including this one
-- `2_labels_pct`: Percentage of samples that are two-label
-- `3plus_labels_count`: Number of samples with 3 or more emotions including this one
-- `3plus_labels_pct`: Percentage of samples that are three-plus-label
-
-**Per-Emotion Support Counts by Split:**
-
-**Location:** `output/stats/per_emotion_supports_by_split.csv`
-
-**Format:**
-```csv
-emotion,train_count,val_count,test_count,total_count
-neutral,14219,1766,1787,17772
-admiration,4130,488,504,5122
-approval,2939,397,351,3687
-...
-```
-
-**Columns:**
-- `emotion`: Emotion category name
-- `train_count`: Number of samples in training split
-- `val_count`: Number of samples in validation split
-- `test_count`: Number of samples in test split
-- `total_count`: Total samples across all splits
-
-**Use Cases:**
-- Joining with per-class metrics for performance analysis
-- Analyzing class imbalance across splits
-- Computing per-class sample weights for training
-- Documenting dataset characteristics for ablation studies
+**For the rationale behind dual visualizations (with/without neutral), see `design_decisions.md`.**
 
 ### Dataset Statistics
 

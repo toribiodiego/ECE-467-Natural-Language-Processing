@@ -1,0 +1,303 @@
+# GoEmotions Dataset Analysis
+
+This document provides comprehensive statistics and analysis of the GoEmotions dataset, including sample distributions, multi-label characteristics, and per-emotion breakdowns.
+
+## Table of Contents
+
+1. [Dataset Overview](#dataset-overview)
+2. [Multi-Label Distribution](#multi-label-distribution)
+3. [Per-Emotion Statistics](#per-emotion-statistics)
+4. [Split Distribution](#split-distribution)
+5. [Data Files Reference](#data-files-reference)
+
+---
+
+## Dataset Overview
+
+**Source:** [HuggingFace Datasets - go_emotions](https://huggingface.co/datasets/go_emotions)
+
+**Dataset Characteristics:**
+- **Total Samples:** 58,009 Reddit comments
+- **Emotion Labels:** 28 total (27 emotions + neutral)
+- **Label Type:** Multi-label (samples can have multiple emotions)
+- **Domain:** Social media text (Reddit comments)
+- **Language:** English
+
+**Dataset Splits:**
+- **Train:** 43,410 samples (74.8%)
+- **Validation:** 5,426 samples (9.4%)
+- **Test:** 5,427 samples (9.4%)
+
+**Emotion Categories:**
+
+admiration, amusement, anger, annoyance, approval, caring, confusion, curiosity, desire, disappointment, disapproval, disgust, embarrassment, excitement, fear, gratitude, grief, joy, love, nervousness, optimism, pride, realization, relief, remorse, sadness, surprise, neutral
+
+---
+
+## Multi-Label Distribution
+
+### Overall Statistics
+
+**Across all splits:**
+- **Single-label samples:** ~83.8% (majority have exactly one emotion)
+- **Two-label samples:** ~14.8% (multiple emotions, but not excessive)
+- **Three+ label samples:** ~1.3% (rare but present)
+
+**Key Finding:** 16.2% of samples contain multiple emotions, making this a true multi-label classification problem.
+
+### Per-Split Breakdown
+
+| Split      | 1 Label (%) | 2 Labels (%) | 3+ Labels (%) | Total Samples |
+|------------|-------------|--------------|---------------|---------------|
+| Train      | 83.6        | 15.1         | 1.3           | 43,410        |
+| Validation | 83.8        | 14.9         | 1.3           | 5,426         |
+| Test       | 84.6        | 14.3         | 1.2           | 5,427         |
+
+**Observation:** Distribution is consistent across splits, indicating proper stratification.
+
+**Data Source:** `output/stats/multi_label_stats.csv`
+
+---
+
+## Per-Emotion Statistics
+
+### Frequency Distribution
+
+Emotions ranked by total frequency (descending):
+
+| Rank | Emotion         | Total Count | % of Dataset |
+|------|-----------------|-------------|--------------|
+| 1    | neutral         | 17,772      | 30.6%        |
+| 2    | admiration      | 5,122       | 8.8%         |
+| 3    | approval        | 3,687       | 6.4%         |
+| 4    | gratitude       | 3,372       | 5.8%         |
+| 5    | annoyance       | 3,093       | 5.3%         |
+| 6    | amusement       | 2,895       | 5.0%         |
+| 7    | curiosity       | 2,723       | 4.7%         |
+| 8    | disapproval     | 2,581       | 4.4%         |
+| 9    | love            | 2,576       | 4.4%         |
+| 10   | optimism        | 1,976       | 3.4%         |
+| ...  | ...             | ...         | ...          |
+| 28   | grief           | 96          | 0.2%         |
+
+**Class Imbalance:**
+- **Most frequent:** neutral (17,772 samples)
+- **Least frequent:** grief (96 samples)
+- **Imbalance ratio:** 185:1 (neutral vs. grief)
+
+**Implications:**
+- Class-weighted loss may be necessary for rare emotions
+- Per-class threshold tuning likely needed for optimal F1 scores
+- Evaluation metrics should use macro-averaging to avoid bias toward frequent classes
+
+**Data Source:** `output/stats/per_emotion_supports_by_split.csv`
+
+### Multi-Label Characteristics by Emotion
+
+Distribution of single-label vs. multi-label samples for each emotion:
+
+| Emotion      | Total | 1 Label (%) | 2 Labels (%) | 3+ Labels (%) |
+|--------------|-------|-------------|--------------|---------------|
+| neutral      | 17772 | 90.1        | 9.4          | 0.5           |
+| fear         | 764   | 72.4        | 23.3         | 4.3           |
+| amusement    | 2895  | 70.7        | 26.4         | 2.9           |
+| gratitude    | 3372  | 70.5        | 25.9         | 3.6           |
+| disapproval  | 2581  | 70.1        | 27.1         | 2.8           |
+| surprise     | 1330  | 67.8        | 28.9         | 3.2           |
+| admiration   | 5122  | 66.1        | 29.9         | 4.0           |
+| remorse      | 669   | 65.3        | 29.6         | 5.1           |
+| embarrass.   | 375   | 65.6        | 29.1         | 5.3           |
+| ...          | ...   | ...         | ...          | ...           |
+| grief        | 96    | 49.0        | 41.7         | 9.4           |
+| pride        | 142   | 47.2        | 45.8         | 7.0           |
+
+**Key Observations:**
+
+1. **Neutral is most often single-label** (90.1%)
+   - Neutral samples rarely co-occur with other emotions
+   - May be easier to predict due to clear semantic distinction
+
+2. **Rare emotions have high multi-label rates**
+   - Grief: 51.0% multi-label (only 49.0% single-label)
+   - Pride: 52.8% multi-label
+   - Rare emotions often co-occur with more common emotions
+
+3. **Multi-label complexity varies by emotion**
+   - Some emotions are "standalone" (neutral, fear, amusement)
+   - Others are frequently combined (grief, pride, nervousness)
+
+**Implications for Modeling:**
+- Models may learn to predict frequent standalone emotions more easily
+- Rare, multi-label emotions may require careful threshold tuning
+- Co-occurrence patterns should be analyzed for error diagnosis
+
+**Data Source:** `output/stats/per_emotion_multilabel.csv`
+
+---
+
+## Split Distribution
+
+### Per-Emotion Counts by Split
+
+Example emotions (full table in CSV):
+
+| Emotion    | Train  | Val  | Test | Total  | Train % | Val % | Test % |
+|------------|--------|------|------|--------|---------|-------|--------|
+| neutral    | 14,219 | 1,766| 1,787| 17,772 | 80.0    | 9.9   | 10.1   |
+| admiration | 4,130  | 488  | 504  | 5,122  | 80.6    | 9.5   | 9.8    |
+| approval   | 2,939  | 397  | 351  | 3,687  | 79.7    | 10.8  | 9.5    |
+| gratitude  | 2,662  | 358  | 352  | 3,372  | 78.9    | 10.6  | 10.4   |
+| grief      | 77     | 13   | 6    | 96     | 80.2    | 13.5  | 6.3    |
+
+**Observations:**
+
+1. **Consistent split proportions**
+   - Most emotions maintain ~80% train, ~10% val, ~10% test
+   - Stratification appears effective for common emotions
+
+2. **Rare emotion variability**
+   - Grief test split (6.3%) is lower than expected
+   - Small sample size (96 total) makes perfect stratification difficult
+   - May lead to higher variance in test metrics for rare emotions
+
+**Implications:**
+- Evaluation on rare emotions may have higher confidence intervals
+- Cross-validation could provide more robust estimates for rare classes
+- Report per-class metrics with sample size context
+
+**Data Source:** `output/stats/per_emotion_supports_by_split.csv`
+
+---
+
+## Data Files Reference
+
+### CSV Exports
+
+All statistics are exported to CSV files for reproducibility and downstream analysis.
+
+#### `output/stats/multi_label_stats.csv`
+
+**Purpose:** Overall multi-label distribution across splits
+
+**Columns:**
+- `Split`: Dataset split name (Train, Validation, Test)
+- `1 Label (%)`: Percentage of samples with exactly 1 emotion
+- `2 Labels (%)`: Percentage of samples with exactly 2 emotions
+- `3+ Labels (%)`: Percentage of samples with 3 or more emotions
+- `Total Samples`: Total number of samples in split
+
+**Generated by:** `python -m src.data.multilabel_stats`
+
+**Use cases:**
+- Reporting dataset characteristics in papers/presentations
+- Understanding multi-label complexity
+- Caption text for multi-label distribution figures
+
+---
+
+#### `output/stats/per_emotion_multilabel.csv`
+
+**Purpose:** Per-emotion multi-label breakdown showing how often each emotion appears alone vs. with others
+
+**Columns:**
+- `emotion`: Emotion category name
+- `total_frequency`: Total number of samples containing this emotion
+- `1_label_count`: Number of samples with only this emotion (single-label)
+- `1_label_pct`: Percentage of samples that are single-label
+- `2_labels_count`: Number of samples with exactly 2 emotions including this one
+- `2_labels_pct`: Percentage of samples that are two-label
+- `3plus_labels_count`: Number of samples with 3 or more emotions including this one
+- `3plus_labels_pct`: Percentage of samples that are three-plus-label
+
+**Sorting:** Emotions sorted by total_frequency (descending)
+
+**Generated by:** `python -m src.visualization.class_distribution`
+
+**Use cases:**
+- Understanding which emotions are standalone vs. co-occurring
+- Identifying emotions that may need special threshold tuning
+- Analyzing model errors in multi-label context
+- Documenting dataset characteristics for ablation studies
+
+**Data integrity:** All percentages sum to 100% for each emotion. Counts sum to total_frequency.
+
+---
+
+#### `output/stats/per_emotion_supports_by_split.csv`
+
+**Purpose:** Per-emotion sample counts for each dataset split (train/val/test)
+
+**Columns:**
+- `emotion`: Emotion category name
+- `train_count`: Number of samples in training split
+- `val_count`: Number of samples in validation split
+- `test_count`: Number of samples in test split
+- `total_count`: Total samples across all splits
+
+**Sorting:** Emotions sorted by total_count (descending)
+
+**Generated by:** `python -m src.visualization.class_distribution`
+
+**Use cases:**
+- Joining with per-class metrics for performance analysis
+- Analyzing class imbalance across splits
+- Computing per-class sample weights for training
+- Verifying stratification quality
+- Reporting confidence intervals for rare-class metrics
+
+**Data integrity:** train_count + val_count + test_count = total_count for all emotions
+
+---
+
+### Visualizations
+
+#### `output/figures/class_distribution_stacked.png`
+
+**Shows:** All 28 emotions with multi-label breakdown (1-label, 2-labels, 3+ labels)
+
+**Purpose:** Complete view of dataset distribution
+
+**Y-axis scale:** ~18,000 (dominated by neutral's 17,772 samples)
+
+**Use case:** Comprehensive dataset overview including neutral
+
+---
+
+#### `output/figures/class_distribution_stacked_no_neutral.png`
+
+**Shows:** 27 emotions (excluding neutral) with multi-label breakdown
+
+**Purpose:** Better visual clarity of non-neutral emotions
+
+**Y-axis scale:** ~5,000 (scales to admiration's 5,122 samples)
+
+**Use case:** Detailed view of multi-label patterns in non-neutral emotions
+
+**Note:** This is a visualization-only exclusion. Neutral is retained in all dataset processing, training, and CSV exports. See `design_decisions.md` for rationale.
+
+---
+
+## Generating Statistics
+
+All statistics can be regenerated from scratch using the following commands:
+
+```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Generate multi-label distribution statistics
+python -m src.data.multilabel_stats
+
+# Generate class distribution visualizations and per-emotion statistics
+python -m src.visualization.class_distribution
+```
+
+**First run:** ~30-40 seconds (downloads dataset from HuggingFace Hub)
+
+**Subsequent runs:** ~8-10 seconds (uses cached dataset from `~/.cache/huggingface/datasets`)
+
+---
+
+**Last Updated:** December 2024
+
+**Maintainer:** ECE-467 Final Project Team
