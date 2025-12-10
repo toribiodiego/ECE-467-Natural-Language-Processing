@@ -254,7 +254,7 @@ def create_character_histogram(
     # Create figure with 1 row x 3 columns (train, val, test)
     fig, axes = plt.subplots(1, 3, figsize=figsize, dpi=dpi)
 
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Blue, orange, green
+    colors = ['#0000ff', '#00ff00', '#ff0000']  # Pure blue, green, red
 
     # Use 99.9th percentile for x-axis limit (shows 99.9% of data)
     # This balances completeness with avoiding extreme outlier distortion
@@ -273,8 +273,11 @@ def create_character_histogram(
 
         ax.hist(filtered_lengths, bins=char_bins, color=colors[i],
                 alpha=0.7, edgecolor='black', linewidth=0.5)
-        ax.set_xlabel('Character Count', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+
+        # Only add labels to leftmost plot
+        if i == 0:
+            ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+
         ax.set_title(f'{split_name.capitalize()}',
                     fontsize=12, fontweight='bold')
         ax.grid(axis='y', alpha=0.3, linestyle='--')
@@ -282,9 +285,12 @@ def create_character_histogram(
         # Set unified x-axis limit
         ax.set_xlim(0, max_char_length)
 
+    # Common x-axis label centered below all plots
+    fig.text(0.5, 0.02, 'Character Count', ha='center', fontsize=11, fontweight='bold')
+
     # Overall title
-    fig.suptitle('Character Length Distributions by Split (99.9% of data)',
-                fontsize=16, fontweight='bold', y=1.02)
+    fig.suptitle('Character Length by Split',
+                fontsize=16, fontweight='bold', y=0.98)
 
     # Tight layout
     plt.tight_layout()
@@ -327,7 +333,7 @@ def create_token_histogram(
     # Create figure with 1 row x 3 columns (train, val, test)
     fig, axes = plt.subplots(1, 3, figsize=figsize, dpi=dpi)
 
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Blue, orange, green
+    colors = ['#0000ff', '#00ff00', '#ff0000']  # Pure blue, green, red
 
     # Use 99.9th percentile for x-axis limit (shows 99.9% of data)
     # This balances completeness with avoiding extreme outlier distortion
@@ -346,8 +352,11 @@ def create_token_histogram(
 
         ax.hist(filtered_lengths, bins=token_bins, color=colors[i],
                 alpha=0.7, edgecolor='black', linewidth=0.5)
-        ax.set_xlabel('Token Count', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+
+        # Only add labels to leftmost plot
+        if i == 0:
+            ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+
         ax.set_title(f'{split_name.capitalize()}',
                     fontsize=12, fontweight='bold')
         ax.grid(axis='y', alpha=0.3, linestyle='--')
@@ -355,9 +364,12 @@ def create_token_histogram(
         # Set unified x-axis limit
         ax.set_xlim(0, max_token_length)
 
+    # Common x-axis label centered below all plots
+    fig.text(0.5, 0.02, 'Token Count', ha='center', fontsize=11, fontweight='bold')
+
     # Overall title
-    fig.suptitle('Token Length Distributions by Split (99.9% of data)',
-                fontsize=16, fontweight='bold', y=1.02)
+    fig.suptitle('Token Length by Split',
+                fontsize=16, fontweight='bold', y=0.98)
 
     # Tight layout
     plt.tight_layout()
