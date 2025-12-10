@@ -195,7 +195,7 @@ def create_cooccurrence_heatmap(
         cooccurrence_matrix,
         xticklabels=filtered_names,
         yticklabels=filtered_names,
-        cmap='YlOrRd',
+        cmap='rocket',  # Dark to bright colormap with good contrast
         fmt='d',
         cbar_kws={'label': 'Co-occurrence Count'},
         ax=ax,
@@ -219,23 +219,20 @@ def create_cooccurrence_heatmap(
     top_pairs.sort(key=lambda x: x[2], reverse=True)
     top_10_pairs = top_pairs[:10]
 
-    # Annotate top pairs on the heatmap
+    # Annotate top pairs on the heatmap with white text
     for i, j, count, _, _ in top_10_pairs:
         # Annotate both upper and lower triangle for symmetry
         ax.text(j + 0.5, i + 0.5, str(count),
                ha='center', va='center', fontsize=8, fontweight='bold',
-               color='black' if count < cooccurrence_matrix.max() * 0.7 else 'white')
+               color='white')
         ax.text(i + 0.5, j + 0.5, str(count),
                ha='center', va='center', fontsize=8, fontweight='bold',
-               color='black' if count < cooccurrence_matrix.max() * 0.7 else 'white')
+               color='white')
 
     # Customize appearance
     ax.set_xlabel('Emotion', fontsize=14, fontweight='bold', labelpad=10)
     ax.set_ylabel('Emotion', fontsize=14, fontweight='bold', labelpad=10)
-    title = 'Label Co-occurrence Matrix'
-    if mask_diagonal:
-        title += ' (diagonal masked)'
-    ax.set_title(title, fontsize=16, fontweight='bold', pad=15)
+    ax.set_title('Label Co-occurrence Matrix', fontsize=16, fontweight='bold', pad=15)
 
     # Rotate labels for readability
     plt.xticks(rotation=45, ha='right', fontsize=9)
