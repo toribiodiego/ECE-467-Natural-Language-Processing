@@ -621,13 +621,20 @@ def main() -> None:
     # Generate visualization based on BAR_STYLE
     logger.info(f"Generating visualization (style: {BAR_STYLE})...")
 
-    # Modify filename based on bar style for comparison
+    # Modify filename based on bar style and neutral inclusion for comparison
     base_name = OUTPUT_FILENAME.replace('.png', '')
-    if BAR_STYLE != 'basic':
-        output_filename = f"{base_name}_{BAR_STYLE}.png"
-    else:
-        output_filename = OUTPUT_FILENAME
 
+    # Add style suffix if not basic
+    if BAR_STYLE != 'basic':
+        filename_parts = [base_name, BAR_STYLE]
+    else:
+        filename_parts = [base_name]
+
+    # Add neutral exclusion suffix if applicable
+    if not INCLUDE_NEUTRAL:
+        filename_parts.append('no_neutral')
+
+    output_filename = '_'.join(filename_parts) + '.png'
     output_path = os.path.join(output_dir, 'figures', output_filename)
 
     if BAR_STYLE == 'basic':
