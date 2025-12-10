@@ -255,7 +255,8 @@ def create_character_histogram(
     fig, axes = plt.subplots(1, 3, figsize=figsize, dpi=dpi)
 
     # Pure RGB colors using hex: true blue, true green, true red
-    colors = ['#0000FF', '#00FF00', '#FF0000']
+    # Matches class_distribution.py color scheme
+    colors = ['#0000ff', '#00ff00', '#ff0000']
 
     # Use 99.9th percentile for x-axis limit (shows 99.9% of data)
     # This balances completeness with avoiding extreme outlier distortion
@@ -335,7 +336,8 @@ def create_token_histogram(
     fig, axes = plt.subplots(1, 3, figsize=figsize, dpi=dpi)
 
     # Pure RGB colors using hex: true blue, true green, true red
-    colors = ['#0000FF', '#00FF00', '#FF0000']
+    # Matches class_distribution.py color scheme
+    colors = ['#0000ff', '#00ff00', '#ff0000']
 
     # Use 99.9th percentile for x-axis limit (shows 99.9% of data)
     # This balances completeness with avoiding extreme outlier distortion
