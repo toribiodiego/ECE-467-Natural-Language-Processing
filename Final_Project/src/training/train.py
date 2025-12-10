@@ -16,6 +16,7 @@ import logging
 import sys
 import os
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Tuple, List, Optional
@@ -774,11 +775,18 @@ def train_model(
     history = {
         'train_loss': [],
         'val_loss': [],
-        'learning_rates': []
+        'val_auc': [],
+        'learning_rates': [],
+        'epoch_times': []
     }
+
+    # Track training start time
+    training_start_time = time.time()
 
     # Training loop
     for epoch in range(args.epochs):
+        epoch_start_time = time.time()
+
         logger.info(f"Epoch {epoch + 1}/{args.epochs}")
         logger.info("-" * 70)
 
@@ -827,6 +835,8 @@ def train_model(
         model.eval()
         val_loss = 0.0
         val_steps = 0
+        val_logits = []
+        val_labels = []
 
         with torch.no_grad():
             progress_bar = tqdm(val_loader, desc=f"Validation Epoch {epoch + 1}")
@@ -838,10 +848,15 @@ def train_model(
                 # Forward pass
                 outputs = model(**batch)
                 loss = outputs['loss']
+                logits = outputs['logits']
 
                 # Track metrics
                 val_loss += loss.item()
                 val_steps += 1
+
+                # Collect logits and labels for AUC calculation
+                val_logits.append(logits.cpu())
+                val_labels.append(batch['labels'].cpu())
 
                 # Update progress bar
                 progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
@@ -849,23 +864,63 @@ def train_model(
         # Calculate average validation loss
         avg_val_loss = val_loss / val_steps
 
+        # Compute validation AUC
+        val_logits_all = torch.cat(val_logits, dim=0).numpy()
+        val_labels_all = torch.cat(val_labels, dim=0).numpy()
+        val_probs = 1 / (1 + np.exp(-val_logits_all))
+
+        try:
+            val_auc = roc_auc_score(val_labels_all, val_probs, average='micro')
+        except ValueError:
+            val_auc = 0.0
+
+        # Calculate epoch time and estimate remaining time
+        epoch_time = time.time() - epoch_start_time
+        avg_epoch_time = (time.time() - training_start_time) / (epoch + 1)
+        remaining_epochs = args.epochs - (epoch + 1)
+        estimated_time_remaining = avg_epoch_time * remaining_epochs
+
+        # Format time remaining
+        if estimated_time_remaining > 0:
+            hours = int(estimated_time_remaining // 3600)
+            minutes = int((estimated_time_remaining % 3600) // 60)
+            seconds = int(estimated_time_remaining % 60)
+            time_remaining_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        else:
+            time_remaining_str = "00:00:00"
+
         # Log epoch summary
-        logger.info(f"  Train Loss: {avg_train_loss:.4f}")
-        logger.info(f"  Val Loss:   {avg_val_loss:.4f}")
-        logger.info(f"  Learning Rate: {current_lr:.2e}")
+        logger.info(f"  Train Loss:     {avg_train_loss:.4f}")
+        logger.info(f"  Val Loss:       {avg_val_loss:.4f}")
+        logger.info(f"  Val AUC:        {val_auc:.4f}")
+        logger.info(f"  Learning Rate:  {current_lr:.2e}")
+        logger.info(f"  Epoch Time:     {epoch_time:.1f}s")
+        if remaining_epochs > 0:
+            logger.info(f"  Time Remaining: ~{time_remaining_str}")
         logger.info("")
 
         # Store history
         history['train_loss'].append(avg_train_loss)
         history['val_loss'].append(avg_val_loss)
+        history['val_auc'].append(val_auc)
         history['learning_rates'].append(current_lr)
+        history['epoch_times'].append(epoch_time)
+
+    # Calculate total training time
+    total_training_time = time.time() - training_start_time
+    hours = int(total_training_time // 3600)
+    minutes = int((total_training_time % 3600) // 60)
+    seconds = int(total_training_time % 60)
 
     logger.info("=" * 70)
     logger.info("Training Complete")
     logger.info("=" * 70)
-    logger.info(f"Final train loss: {history['train_loss'][-1]:.4f}")
-    logger.info(f"Final val loss: {history['val_loss'][-1]:.4f}")
-    logger.info(f"Best val loss: {min(history['val_loss']):.4f} (epoch {history['val_loss'].index(min(history['val_loss'])) + 1})")
+    logger.info(f"Total Time:       {hours:02d}:{minutes:02d}:{seconds:02d}")
+    logger.info(f"Final Train Loss: {history['train_loss'][-1]:.4f}")
+    logger.info(f"Final Val Loss:   {history['val_loss'][-1]:.4f}")
+    logger.info(f"Final Val AUC:    {history['val_auc'][-1]:.4f}")
+    logger.info(f"Best Val Loss:    {min(history['val_loss']):.4f} (epoch {history['val_loss'].index(min(history['val_loss'])) + 1})")
+    logger.info(f"Best Val AUC:     {max(history['val_auc']):.4f} (epoch {history['val_auc'].index(max(history['val_auc'])) + 1})")
     logger.info("=" * 70)
 
     return history
