@@ -274,7 +274,7 @@ def create_character_histogram(
         filtered_lengths = [l for l in char_lengths if l <= max_char_length]
 
         ax.hist(filtered_lengths, bins=char_bins, color=colors[i],
-                alpha=0.7, edgecolor='black', linewidth=0.5)
+                alpha=0.9, edgecolor='black', linewidth=0.5)
 
         # Only add labels to leftmost plot
         if i == 0:
@@ -355,7 +355,7 @@ def create_token_histogram(
         filtered_lengths = [l for l in token_lengths if l <= max_token_length]
 
         ax.hist(filtered_lengths, bins=token_bins, color=colors[i],
-                alpha=0.7, edgecolor='black', linewidth=0.5)
+                alpha=0.9, edgecolor='black', linewidth=0.5)
 
         # Only add labels to leftmost plot
         if i == 0:
