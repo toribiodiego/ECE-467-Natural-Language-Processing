@@ -32,6 +32,13 @@ from src.data.load_dataset import get_dataset_statistics
 from src.training.data_utils import load_dataset_with_limits, create_dataloaders
 from src.training.metrics_utils import evaluate_with_threshold, log_evaluation_results
 from src.training.loss_utils import get_loss_function, compute_class_weights, TrainingCostTracker
+from src.training.wandb_utils import (
+    init_wandb,
+    log_training_metrics,
+    log_evaluation_metrics,
+    log_artifact_checkpoint,
+    finish_wandb
+)
 
 
 # Configure logging
@@ -532,7 +539,8 @@ def train_model(
     train_loader: DataLoader,
     val_loader: DataLoader,
     args: argparse.Namespace,
-    device: torch.device
+    device: torch.device,
+    use_wandb: bool = False
 ) -> Dict[str, List[float]]:
     """
     Train the model for the specified number of epochs.
@@ -605,6 +613,7 @@ def train_model(
         # Training phase
         model.train()
         train_loss = 0.0
+        train_losses = []  # Track individual batch losses for std calculation
         train_steps = 0
 
         progress_bar = tqdm(train_loader, desc=f"Training Epoch {epoch + 1}")
@@ -630,6 +639,7 @@ def train_model(
 
             # Track metrics
             train_loss += loss.item()
+            train_losses.append(loss.item())
             train_steps += 1
 
             # Update progress bar
@@ -639,8 +649,9 @@ def train_model(
                 'lr': f'{current_lr:.2e}'
             })
 
-        # Calculate average training loss
+        # Calculate average training loss and std
         avg_train_loss = train_loss / train_steps
+        train_loss_std = np.std(train_losses) if train_losses else 0.0
         current_lr = scheduler.get_last_lr()[0]
 
         # Validation phase
@@ -721,6 +732,20 @@ def train_model(
         # Track training costs
         num_samples = len(train_loader.dataset)
         cost_tracker.log_epoch(epoch_time, num_samples, logger_instance=logger)
+
+        # Log metrics to W&B
+        samples_per_sec = num_samples / epoch_time if epoch_time > 0 else 0
+        log_training_metrics(
+            epoch=epoch,
+            train_loss=avg_train_loss,
+            train_loss_std=train_loss_std,
+            val_loss=avg_val_loss,
+            val_auc=val_auc,
+            learning_rate=current_lr,
+            epoch_time=epoch_time,
+            samples_per_sec=samples_per_sec,
+            use_wandb=use_wandb
+        )
 
     # Calculate total training time
     total_training_time = time.time() - training_start_time
@@ -997,28 +1022,85 @@ def main() -> None:
         # Initialize model with configured loss
         model = initialize_model(args.model, num_labels, args, loss_fn=loss_fn)
 
+        # Count model parameters
+        model_params = sum(p.numel() for p in model.parameters())
+        logger.info(f"Model parameters: {model_params:,}")
+
+        # Initialize W&B if enabled
+        wandb_run = init_wandb(
+            args=args,
+            model_name=args.model,
+            num_labels=num_labels,
+            train_size=len(dataset['train']),
+            val_size=len(dataset['validation']),
+            test_size=len(dataset['test']),
+            model_params=model_params
+        )
+        use_wandb = wandb_run is not None
+
         # Train model
-        history = train_model(model, train_loader, val_loader, args, device)
+        history = train_model(model, train_loader, val_loader, args, device, use_wandb=use_wandb)
 
         # Evaluate model on test set
         test_metrics = evaluate_model(model, test_loader, device, label_names)
+
+        # Calculate best epoch and total training time
+        best_epoch = int(history['val_auc'].index(max(history['val_auc'])) + 1)
+        total_training_time = sum(history['epoch_times'])
+
+        # Log evaluation metrics to W&B
+        log_evaluation_metrics(
+            test_results=test_metrics,
+            label_names=label_names,
+            total_training_time=total_training_time,
+            best_epoch=best_epoch,
+            final_epoch=args.epochs,
+            use_wandb=use_wandb
+        )
 
         # Save checkpoint with training history and test metrics
         checkpoint_metrics = {
             'train_loss': history['train_loss'],
             'val_loss': history['val_loss'],
             'best_val_loss': float(min(history['val_loss'])),
-            'best_epoch': int(history['val_loss'].index(min(history['val_loss'])) + 1),
+            'best_epoch': best_epoch,
             'test_metrics': test_metrics
         }
         checkpoint_path = save_checkpoint(
             model=model,
             tokenizer=tokenizer,
             model_name=args.model,
-            metrics=checkpoint_metrics
+            metrics=checkpoint_metrics,
+            checkpoint_dir=args.output_dir
         )
 
-        # Placeholder for remaining implementation
+        # Upload checkpoint as W&B artifact
+        if use_wandb:
+            hyperparameters = {
+                'learning_rate': args.learning_rate,
+                'batch_size': args.batch_size,
+                'epochs': args.epochs,
+                'dropout': args.dropout,
+                'max_seq_length': args.max_seq_length,
+                'loss_type': args.loss_type,
+                'weight_decay': args.weight_decay,
+                'warmup_steps': args.warmup_steps,
+                'seed': args.seed
+            }
+
+            log_artifact_checkpoint(
+                checkpoint_dir=checkpoint_path,
+                model_name=args.model,
+                final_test_auc=test_metrics.get('auc_micro', 0.0),
+                final_test_f1=test_metrics.get('macro_f1', 0.0),
+                best_epoch=best_epoch,
+                training_time_hours=total_training_time / 3600.0,
+                hyperparameters=hyperparameters,
+                random_seed=args.seed,
+                use_wandb=use_wandb
+            )
+
+        # Final status
         logger.info("")
         logger.info("Training pipeline status:")
         logger.info("  ✓ Data loading")
@@ -1027,11 +1109,14 @@ def main() -> None:
         logger.info("  ✓ Training loop with optimization")
         logger.info("  ✓ Evaluation metrics (AUC, F1, precision, recall)")
         logger.info("  ✓ Checkpoint saving")
-        logger.info("  - W&B logging and artifact upload")
+        logger.info(f"  {'✓' if use_wandb else '-'} W&B logging and artifact upload")
         logger.info("")
-        logger.info(f"Training complete. Best val loss: {min(history['val_loss']):.4f}")
+        logger.info(f"Training complete. Best val AUC: {max(history['val_auc']):.4f} (epoch {best_epoch})")
         logger.info(f"Test metrics: AUC={test_metrics['auc']:.4f}, Macro F1={test_metrics['macro_f1']:.4f}, Micro F1={test_metrics['micro_f1']:.4f}")
         logger.info(f"Checkpoint saved to: {checkpoint_path}")
+
+        # Finish W&B run
+        finish_wandb(use_wandb=use_wandb)
 
     except ValueError as e:
         logger.error(f"Configuration error: {e}")
