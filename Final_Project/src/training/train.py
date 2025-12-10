@@ -17,10 +17,12 @@ import sys
 from typing import Dict, Any, Tuple, List
 import torch
 import torch.nn as nn
+import numpy as np
 from datasets import DatasetDict
 from transformers import AutoTokenizer, AutoModel, AutoConfig, get_linear_schedule_with_warmup
 from torch.utils.data import DataLoader, Dataset as TorchDataset
 from tqdm import tqdm
+from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score
 
 from src.data.load_dataset import load_go_emotions, get_label_names, get_dataset_statistics
 
@@ -866,6 +868,137 @@ def train_model(
 
 
 # ============================================================================
+# Evaluation
+# ============================================================================
+
+def evaluate_model(
+    model: MultiLabelClassificationModel,
+    dataloader: DataLoader,
+    device: torch.device,
+    label_names: List[str]
+) -> Dict[str, Any]:
+    """
+    Evaluate the model and compute comprehensive metrics.
+
+    Computes:
+    - AUC score (micro-averaged across all labels)
+    - Macro and micro F1, precision, recall
+    - Per-class F1 scores for all emotion labels
+
+    Args:
+        model: Model to evaluate
+        dataloader: DataLoader for evaluation data
+        device: Device to evaluate on (cuda or cpu)
+        label_names: List of label names for per-class metrics
+
+    Returns:
+        Dictionary containing:
+        {
+            'auc': float,
+            'macro_f1': float,
+            'micro_f1': float,
+            'macro_precision': float,
+            'micro_precision': float,
+            'macro_recall': float,
+            'micro_recall': float,
+            'per_class_f1': Dict[str, float]
+        }
+    """
+    logger.info("")
+    logger.info("=" * 70)
+    logger.info("Evaluation")
+    logger.info("=" * 70)
+
+    model.eval()
+
+    all_logits = []
+    all_labels = []
+
+    with torch.no_grad():
+        progress_bar = tqdm(dataloader, desc="Evaluating")
+
+        for batch in progress_bar:
+            # Move batch to device
+            batch = {k: v.to(device) for k, v in batch.items()}
+
+            # Forward pass
+            outputs = model(**batch)
+            logits = outputs['logits']
+
+            # Collect predictions and labels
+            all_logits.append(logits.cpu())
+            all_labels.append(batch['labels'].cpu())
+
+    # Concatenate all batches
+    all_logits = torch.cat(all_logits, dim=0)
+    all_labels = torch.cat(all_labels, dim=0)
+
+    # Convert to numpy
+    all_logits_np = all_logits.numpy()
+    all_labels_np = all_labels.numpy()
+
+    # Apply sigmoid to get probabilities
+    all_probs = 1 / (1 + np.exp(-all_logits_np))
+
+    # Compute binary predictions (threshold = 0.5)
+    all_preds = (all_probs >= 0.5).astype(int)
+
+    logger.info(f"Number of samples: {len(all_labels_np)}")
+    logger.info(f"Number of labels: {len(label_names)}")
+    logger.info("")
+
+    # Compute AUC score (micro-averaged)
+    try:
+        auc = roc_auc_score(all_labels_np, all_probs, average='micro')
+        logger.info(f"AUC (micro): {auc:.4f}")
+    except ValueError as e:
+        logger.warning(f"Could not compute AUC: {e}")
+        auc = 0.0
+
+    # Compute macro and micro averaged metrics
+    macro_f1 = f1_score(all_labels_np, all_preds, average='macro', zero_division=0)
+    micro_f1 = f1_score(all_labels_np, all_preds, average='micro', zero_division=0)
+    macro_precision = precision_score(all_labels_np, all_preds, average='macro', zero_division=0)
+    micro_precision = precision_score(all_labels_np, all_preds, average='micro', zero_division=0)
+    macro_recall = recall_score(all_labels_np, all_preds, average='macro', zero_division=0)
+    micro_recall = recall_score(all_labels_np, all_preds, average='micro', zero_division=0)
+
+    logger.info("")
+    logger.info("Aggregate Metrics:")
+    logger.info(f"  Macro F1:        {macro_f1:.4f}")
+    logger.info(f"  Micro F1:        {micro_f1:.4f}")
+    logger.info(f"  Macro Precision: {macro_precision:.4f}")
+    logger.info(f"  Micro Precision: {micro_precision:.4f}")
+    logger.info(f"  Macro Recall:    {macro_recall:.4f}")
+    logger.info(f"  Micro Recall:    {micro_recall:.4f}")
+
+    # Compute per-class F1 scores
+    per_class_f1_scores = f1_score(all_labels_np, all_preds, average=None, zero_division=0)
+    per_class_f1 = {label_names[i]: float(per_class_f1_scores[i]) for i in range(len(label_names))}
+
+    logger.info("")
+    logger.info("Per-Class F1 Scores:")
+    for label, score in sorted(per_class_f1.items(), key=lambda x: x[1], reverse=True):
+        logger.info(f"  {label:20s}: {score:.4f}")
+
+    logger.info("=" * 70)
+
+    # Return metrics dictionary
+    metrics = {
+        'auc': float(auc),
+        'macro_f1': float(macro_f1),
+        'micro_f1': float(micro_f1),
+        'macro_precision': float(macro_precision),
+        'micro_precision': float(micro_precision),
+        'macro_recall': float(macro_recall),
+        'micro_recall': float(micro_recall),
+        'per_class_f1': per_class_f1
+    }
+
+    return metrics
+
+
+# ============================================================================
 # Main Function
 # ============================================================================
 
@@ -903,6 +1036,9 @@ def main() -> None:
         # Train model
         history = train_model(model, train_loader, val_loader, args, device)
 
+        # Evaluate model on test set
+        test_metrics = evaluate_model(model, test_loader, device, label_names)
+
         # Placeholder for remaining implementation
         logger.info("")
         logger.info("Training pipeline status:")
@@ -910,11 +1046,12 @@ def main() -> None:
         logger.info("  ✓ Tokenization and preprocessing")
         logger.info("  ✓ Model initialization")
         logger.info("  ✓ Training loop with optimization")
-        logger.info("  - Evaluation metrics (AUC, F1, precision, recall)")
+        logger.info("  ✓ Evaluation metrics (AUC, F1, precision, recall)")
         logger.info("  - Checkpoint saving")
         logger.info("  - W&B logging and artifact upload")
         logger.info("")
         logger.info(f"Training complete. Best val loss: {min(history['val_loss']):.4f}")
+        logger.info(f"Test metrics: AUC={test_metrics['auc']:.4f}, Macro F1={test_metrics['macro_f1']:.4f}, Micro F1={test_metrics['micro_f1']:.4f}")
 
     except ValueError as e:
         logger.error(f"Configuration error: {e}")
