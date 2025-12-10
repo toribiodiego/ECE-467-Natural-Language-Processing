@@ -236,10 +236,9 @@ def create_character_histogram(
     """
     Create histogram visualization of character length distributions.
 
-    Uses 99th percentile for x-axis limit to avoid distortion from extreme
-    outliers. Histogram bins are created using numpy's automatic binning
-    algorithm based on the data range, which may result in different bin
-    counts across splits if their ranges differ significantly.
+    Uses 99th percentile for x-axis limit to focus on main distribution
+    while excluding extreme outliers. All three splits use the same x-axis
+    scale for accurate visual comparison.
 
     Args:
         split_names: List of split names
@@ -258,7 +257,6 @@ def create_character_histogram(
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Blue, orange, green
 
     # Use 99th percentile for x-axis limit to avoid outlier distortion
-    # This provides better visualization of the main distribution
     all_lengths = []
     for lengths in all_char_lengths.values():
         all_lengths.extend(lengths)
@@ -269,7 +267,7 @@ def create_character_histogram(
         ax = axes[i]
         char_lengths = all_char_lengths[split_name]
 
-        # Filter to x-axis range for binning consistency
+        # Filter to x-axis range for consistent binning
         filtered_lengths = [l for l in char_lengths if l <= max_char_length]
 
         ax.hist(filtered_lengths, bins=char_bins, color=colors[i],
@@ -284,7 +282,7 @@ def create_character_histogram(
         ax.set_xlim(0, max_char_length)
 
     # Overall title
-    fig.suptitle('Character Length Distributions by Split (99th percentile)',
+    fig.suptitle('Character Length Distributions by Split',
                 fontsize=16, fontweight='bold', y=1.02)
 
     # Tight layout
@@ -309,14 +307,10 @@ def create_token_histogram(
     """
     Create histogram visualization of token length distributions.
 
-    Uses 99th percentile for x-axis limit to avoid distortion from extreme
-    outliers. This ensures the main distribution is clearly visible while
-    extreme cases (e.g., 1437 tokens) don't compress the visualization.
-
-    Note on binning: Matplotlib creates histogram bins based on the data
-    range. Since all three splits have similar distributions (99th percentile
-    around 37-38 tokens), they will have consistent bin widths and counts,
-    making visual comparison accurate.
+    Uses a fixed x-axis limit of 60 tokens to properly visualize the
+    distribution while excluding extreme outliers (max 1437 tokens in train).
+    This covers >99.5% of all samples and provides clear visibility of the
+    distribution shape. All three splits use the same scale for comparison.
 
     Args:
         split_names: List of split names
@@ -334,18 +328,16 @@ def create_token_histogram(
 
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Blue, orange, green
 
-    # Use 99th percentile for x-axis limit to avoid outlier distortion
-    all_lengths = []
-    for lengths in all_token_lengths.values():
-        all_lengths.extend(lengths)
-    max_token_length = np.percentile(all_lengths, 99)
+    # Use 60 tokens as upper limit for better visualization
+    # This shows >99.5% of data while providing clear distribution visibility
+    max_token_length = 60
 
     # Plot token length distributions
     for i, split_name in enumerate(split_names):
         ax = axes[i]
         token_lengths = all_token_lengths[split_name]
 
-        # Filter to x-axis range for binning consistency
+        # Filter to x-axis range for consistent binning
         filtered_lengths = [l for l in token_lengths if l <= max_token_length]
 
         ax.hist(filtered_lengths, bins=token_bins, color=colors[i],
@@ -359,20 +351,8 @@ def create_token_histogram(
         # Set unified x-axis limit
         ax.set_xlim(0, max_token_length)
 
-        # Add vertical lines for common max_seq_length values
-        for max_len, line_color, label in [(128, '#ff0000', '128'),
-                                            (256, '#ff8c00', '256'),
-                                            (512, '#008000', '512')]:
-            # Only show lines that are within the visible range
-            if max_len <= max_token_length:
-                ax.axvline(x=max_len, color=line_color, linestyle='--',
-                          linewidth=2, alpha=0.8, label=f'max={label}')
-
-        if i == 2:  # Only add legend to rightmost plot
-            ax.legend(loc='upper right', fontsize=9)
-
     # Overall title
-    fig.suptitle('Token Length Distributions by Split (99th percentile)',
+    fig.suptitle('Token Length Distributions by Split',
                 fontsize=16, fontweight='bold', y=1.02)
 
     # Tight layout
