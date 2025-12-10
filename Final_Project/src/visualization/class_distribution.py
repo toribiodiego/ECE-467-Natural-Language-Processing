@@ -585,18 +585,17 @@ def create_stacked_bar_chart(
                    label='3+ labels',
                    color=color_3, alpha=0.9)
 
-    # Customize appearance
-    ax.set_xlabel('Emotion', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Frequency', fontsize=12, fontweight='bold')
-    ax.set_title('GoEmotions: Multi-Label Distribution',
-                 fontsize=14, fontweight='bold')
+    # Customize appearance with larger axis labels and spacing
+    ax.set_xlabel('Emotion', fontsize=14, fontweight='bold', labelpad=10)
+    ax.set_ylabel('Frequency', fontsize=14, fontweight='bold', labelpad=12)
+    ax.set_title('GoEmotions', fontsize=16, fontweight='bold', pad=15)
 
     # Set x-axis labels
     ax.set_xticks(x_pos)
     ax.set_xticklabels(emotions, rotation=45, ha='right')
 
     # Add legend with larger font
-    ax.legend(loc='upper right', framealpha=0.95, fontsize=11)
+    ax.legend(loc='upper right', framealpha=0.95, fontsize=13)
 
     # Add grid for readability
     ax.grid(axis='y', alpha=0.3, linestyle='--')
