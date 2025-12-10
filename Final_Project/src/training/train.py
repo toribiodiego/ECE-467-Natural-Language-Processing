@@ -14,7 +14,10 @@ Usage:
 import argparse
 import logging
 import sys
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, List
+from datasets import DatasetDict
+
+from src.data.load_dataset import load_go_emotions, get_label_names, get_dataset_statistics
 
 
 # Configure logging
@@ -301,6 +304,74 @@ def print_configuration(args: argparse.Namespace) -> None:
 
 
 # ============================================================================
+# Data Loading
+# ============================================================================
+
+def load_data(args: argparse.Namespace) -> Tuple[DatasetDict, List[str], int]:
+    """
+    Load GoEmotions dataset with optional sample limiting for testing.
+
+    Args:
+        args: Parsed command line arguments
+
+    Returns:
+        Tuple of (dataset, label_names, num_labels):
+        - dataset: DatasetDict with train/validation/test splits
+        - label_names: List of emotion label names
+        - num_labels: Number of emotion labels (28 for GoEmotions)
+
+    Raises:
+        RuntimeError: If dataset loading fails
+    """
+    logger.info("")
+    logger.info("=" * 70)
+    logger.info("Loading Dataset")
+    logger.info("=" * 70)
+
+    try:
+        # Load dataset from HuggingFace Hub
+        dataset = load_go_emotions()
+
+        # Get label information
+        label_names = get_label_names(dataset)
+        num_labels = len(label_names)
+
+        logger.info(f"Loaded {num_labels} emotion labels")
+        logger.debug(f"Labels: {', '.join(label_names)}")
+
+        # Apply sample limiting for testing if specified
+        if args.max_train_samples is not None:
+            original_size = len(dataset['train'])
+            dataset['train'] = dataset['train'].select(range(min(args.max_train_samples, original_size)))
+            logger.warning(f"Limited training samples: {original_size:,} → {len(dataset['train']):,}")
+
+        if args.max_eval_samples is not None:
+            original_val_size = len(dataset['validation'])
+            dataset['validation'] = dataset['validation'].select(range(min(args.max_eval_samples, original_val_size)))
+            logger.warning(f"Limited validation samples: {original_val_size:,} → {len(dataset['validation']):,}")
+
+            original_test_size = len(dataset['test'])
+            dataset['test'] = dataset['test'].select(range(min(args.max_eval_samples, original_test_size)))
+            logger.warning(f"Limited test samples: {original_test_size:,} → {len(dataset['test']):,}")
+
+        # Print final dataset statistics
+        logger.info("")
+        logger.info("Final dataset sizes:")
+        logger.info(f"  Train:      {len(dataset['train']):,} samples")
+        logger.info(f"  Validation: {len(dataset['validation']):,} samples")
+        logger.info(f"  Test:       {len(dataset['test']):,} samples")
+        logger.info(f"  Total:      {len(dataset['train']) + len(dataset['validation']) + len(dataset['test']):,} samples")
+
+        logger.info("=" * 70)
+
+        return dataset, label_names, num_labels
+
+    except Exception as e:
+        logger.error(f"Failed to load dataset: {e}")
+        raise RuntimeError(f"Dataset loading failed: {e}") from e
+
+
+# ============================================================================
 # Main Function
 # ============================================================================
 
@@ -309,7 +380,7 @@ def main() -> None:
     Main entry point for training script.
 
     This function will be expanded in subsequent tasks to include:
-    - Data loading
+    - Tokenization and preprocessing
     - Model initialization
     - Training loop
     - Evaluation
@@ -324,20 +395,27 @@ def main() -> None:
         # Print configuration
         print_configuration(args)
 
-        # Placeholder for training implementation
+        # Load dataset
+        dataset, label_names, num_labels = load_data(args)
+
+        # Placeholder for remaining training implementation
         logger.info("")
         logger.info("Training pipeline will be implemented in subsequent tasks:")
-        logger.info("  - Data loading and preprocessing")
+        logger.info("  ✓ Data loading")
+        logger.info("  - Tokenization and preprocessing")
         logger.info("  - Model initialization")
         logger.info("  - Training loop with optimization")
         logger.info("  - Evaluation and metrics calculation")
         logger.info("  - Checkpoint saving")
         logger.info("  - W&B logging and artifact upload")
         logger.info("")
-        logger.info("Current task: Argument parsing infrastructure ✓")
+        logger.info(f"Dataset ready: {num_labels} labels, {len(label_names)} emotions")
 
     except ValueError as e:
         logger.error(f"Configuration error: {e}")
+        sys.exit(1)
+    except RuntimeError as e:
+        logger.error(f"Runtime error: {e}")
         sys.exit(1)
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
