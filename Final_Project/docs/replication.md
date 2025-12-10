@@ -48,6 +48,8 @@ All Python dependencies are specified in `requirements.txt` and installed automa
 - `matplotlib==3.7.2` - Visualization
 - `jupyter==1.0.0` - Notebook environment
 
+**Optional:** Weights & Biases for experiment tracking (see `w_and_b_guide.md` for setup instructions)
+
 ---
 
 ## Environment Setup
@@ -358,7 +360,7 @@ The `Final_Project.ipynb` notebook contains the complete training pipeline:
    - Confusion matrix analysis
 6. **Checkpoint Saving:**
    - Best model saved to `artifacts/models/`
-   - Optional: Upload to Weights & Biases
+   - Optional: Upload to Weights & Biases (see `w_and_b_guide.md` for setup)
 
 ### Hyperparameters
 
@@ -419,6 +421,8 @@ artifacts/
         ├── pytorch_model.bin
         └── tokenizer files
 ```
+
+**For W&B integration:** See `w_and_b_guide.md` for instructions on logging metrics, uploading artifacts, and retrieving results from cloud storage.
 
 ### Loading Saved Models
 
@@ -702,6 +706,15 @@ pip list
 # Check disk usage
 du -sh output/ artifacts/ venv/
 ```
+
+---
+
+## Related Documentation
+
+- **`dataset_analysis.md`** - Comprehensive dataset statistics and analysis
+- **`w_and_b_guide.md`** - Weights & Biases setup, logging, and artifact management
+- **`model_performance.md`** - Model results and performance metrics
+- **`design_decisions.md`** - Design rationale and implementation choices
 
 ---
 
