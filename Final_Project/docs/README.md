@@ -27,12 +27,31 @@ This directory contains comprehensive documentation for the GoEmotions emotion c
   - Training configuration and hyperparameters
   - Evaluation metrics and threshold strategies
 
+- **`model_performance.md`** - Final trained model metrics and comparison
+  - RoBERTa-Large and DistilBERT performance
+  - Model comparison table
+  - Per-emotion performance breakdown
+  - Threshold selection results
+  - W&B run references and checkpoint locations
+
+- **`w_and_b_guide.md`** - Weights & Biases setup and usage
+  - W&B account setup and authentication
+  - Logging requirements (metrics, artifacts, metadata)
+  - Artifact management and retrieval
+  - Troubleshooting W&B issues
+
+### Ablation Studies
+
+- **`../ablation_studies/README.md`** - Results and analysis of ablation experiments
+  - Quick comparison table of all ablations
+  - Individual study results (neutral, loss weighting, thresholds, etc.)
+  - W&B artifact links
+  - Cross-references to design decisions and model performance
+
 ### Future Documentation
 
-The following documentation files will be added as the project progresses:
+The following documentation files may be added as needed:
 
-- **`ablation_studies/README.md`** - Results and analysis of ablation experiments
-- **`model_performance.md`** - Final model metrics and per-class performance
 - **`deployment.md`** - Production deployment guide (if applicable)
 
 ## Documentation Organization
