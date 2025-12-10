@@ -222,6 +222,8 @@ Validation,83.8,14.9,1.3,5426
 Test,84.6,14.3,1.2,5427
 ```
 
+**For detailed analysis and interpretation of these statistics, see `dataset_analysis.md#multi-label-distribution`.**
+
 #### Using the Notebook (Alternative)
 
 You can also run the original notebook script:
