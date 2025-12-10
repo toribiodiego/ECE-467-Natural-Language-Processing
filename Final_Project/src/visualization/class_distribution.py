@@ -224,6 +224,180 @@ def create_basic_bar_chart(
     return os.path.abspath(output_path)
 
 
+def create_stacked_bar_chart(
+    emotion_frequencies: Dict[str, int],
+    multilabel_breakdown: Dict[str, Dict[str, int]],
+    output_path: str,
+    figsize: Tuple[float, float] = (14, 8),
+    dpi: int = 300
+) -> str:
+    """
+    Create stacked bar chart showing multi-label breakdown per emotion.
+
+    Each bar shows the total frequency of an emotion, with stacked segments
+    indicating how many samples have 1 label, 2 labels, or 3+ labels.
+
+    Args:
+        emotion_frequencies: Dict mapping emotion to total frequency
+        multilabel_breakdown: Dict mapping emotion to label count breakdown
+        output_path: Where to save the figure
+        figsize: Figure dimensions (width, height) in inches
+        dpi: Resolution for saved figure
+
+    Returns:
+        Absolute path to saved figure
+    """
+    # Sort emotions by total frequency (descending)
+    sorted_emotions = sorted(
+        emotion_frequencies.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    emotions = [e[0] for e in sorted_emotions]
+
+    # Extract breakdown data in same order
+    one_label = [multilabel_breakdown[e]['1_label'] for e in emotions]
+    two_labels = [multilabel_breakdown[e]['2_labels'] for e in emotions]
+    three_plus = [multilabel_breakdown[e]['3plus_labels'] for e in emotions]
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+
+    # Define colors for each category
+    color_1 = '#2E86AB'      # Blue - single label
+    color_2 = '#A23B72'      # Purple - two labels
+    color_3 = '#F18F01'      # Orange - three+ labels
+
+    # Create stacked bars
+    x_pos = np.arange(len(emotions))
+    width = 0.8
+
+    bars1 = ax.bar(x_pos, one_label, width, label='1 label',
+                   color=color_1, alpha=0.9)
+    bars2 = ax.bar(x_pos, two_labels, width, bottom=one_label,
+                   label='2 labels', color=color_2, alpha=0.9)
+    bars3 = ax.bar(x_pos, three_plus, width,
+                   bottom=np.array(one_label) + np.array(two_labels),
+                   label='3+ labels', color=color_3, alpha=0.9)
+
+    # Customize appearance
+    ax.set_xlabel('Emotion', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Frequency', fontsize=12, fontweight='bold')
+    ax.set_title('GoEmotions: Emotion Distribution with Multi-Label Breakdown',
+                 fontsize=14, fontweight='bold')
+
+    # Set x-axis labels
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(emotions, rotation=45, ha='right')
+
+    # Add legend
+    ax.legend(loc='upper right', framealpha=0.95)
+
+    # Add grid for readability
+    ax.grid(axis='y', alpha=0.3, linestyle='--')
+    ax.set_axisbelow(True)
+
+    # Tight layout
+    plt.tight_layout()
+
+    # Save figure
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    plt.savefig(output_path, dpi=dpi, bbox_inches='tight')
+    plt.close()
+
+    return os.path.abspath(output_path)
+
+
+def create_overlaid_bar_chart(
+    emotion_frequencies: Dict[str, int],
+    multilabel_breakdown: Dict[str, Dict[str, int]],
+    output_path: str,
+    figsize: Tuple[float, float] = (14, 8),
+    dpi: int = 300
+) -> str:
+    """
+    Create overlaid bar chart showing multi-label breakdown per emotion.
+
+    Each emotion has three semi-transparent overlapping bars showing counts
+    for 1-label, 2-label, and 3+ label samples.
+
+    Args:
+        emotion_frequencies: Dict mapping emotion to total frequency
+        multilabel_breakdown: Dict mapping emotion to label count breakdown
+        output_path: Where to save the figure
+        figsize: Figure dimensions (width, height) in inches
+        dpi: Resolution for saved figure
+
+    Returns:
+        Absolute path to saved figure
+    """
+    # Sort emotions by total frequency (descending)
+    sorted_emotions = sorted(
+        emotion_frequencies.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    emotions = [e[0] for e in sorted_emotions]
+
+    # Extract breakdown data in same order
+    one_label = [multilabel_breakdown[e]['1_label'] for e in emotions]
+    two_labels = [multilabel_breakdown[e]['2_labels'] for e in emotions]
+    three_plus = [multilabel_breakdown[e]['3plus_labels'] for e in emotions]
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+
+    # Define colors for each category
+    color_1 = '#2E86AB'      # Blue - single label
+    color_2 = '#A23B72'      # Purple - two labels
+    color_3 = '#F18F01'      # Orange - three+ labels
+
+    # Create overlaid bars with different widths for visual separation
+    x_pos = np.arange(len(emotions))
+    width_base = 0.8
+
+    # Widest bar (1 label) at back
+    bars1 = ax.bar(x_pos, one_label, width_base, label='1 label',
+                   color=color_1, alpha=0.5, zorder=1)
+
+    # Medium bar (2 labels) in middle
+    bars2 = ax.bar(x_pos, two_labels, width_base * 0.7, label='2 labels',
+                   color=color_2, alpha=0.6, zorder=2)
+
+    # Narrowest bar (3+ labels) at front
+    bars3 = ax.bar(x_pos, three_plus, width_base * 0.5, label='3+ labels',
+                   color=color_3, alpha=0.7, zorder=3)
+
+    # Customize appearance
+    ax.set_xlabel('Emotion', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Frequency', fontsize=12, fontweight='bold')
+    ax.set_title('GoEmotions: Emotion Distribution with Multi-Label Breakdown (Overlaid)',
+                 fontsize=14, fontweight='bold')
+
+    # Set x-axis labels
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(emotions, rotation=45, ha='right')
+
+    # Add legend
+    ax.legend(loc='upper right', framealpha=0.95)
+
+    # Add grid for readability
+    ax.grid(axis='y', alpha=0.3, linestyle='--')
+    ax.set_axisbelow(True)
+
+    # Tight layout
+    plt.tight_layout()
+
+    # Save figure
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    plt.savefig(output_path, dpi=dpi, bbox_inches='tight')
+    plt.close()
+
+    return os.path.abspath(output_path)
+
+
 # ============================================================================
 # Main Execution
 # ============================================================================
@@ -286,9 +460,24 @@ def main() -> None:
             figsize=(FIGURE_WIDTH, FIGURE_HEIGHT),
             dpi=DPI
         )
+    elif BAR_STYLE == 'stacked':
+        saved_path = create_stacked_bar_chart(
+            emotion_frequencies,
+            multilabel_breakdown,
+            output_path,
+            figsize=(FIGURE_WIDTH, FIGURE_HEIGHT),
+            dpi=DPI
+        )
+    elif BAR_STYLE == 'overlaid':
+        saved_path = create_overlaid_bar_chart(
+            emotion_frequencies,
+            multilabel_breakdown,
+            output_path,
+            figsize=(FIGURE_WIDTH, FIGURE_HEIGHT),
+            dpi=DPI
+        )
     else:
-        # Stacked and overlaid styles will be implemented in later subtasks
-        logger.warning(f"Bar style '{BAR_STYLE}' not yet implemented, using 'basic'")
+        logger.warning(f"Unknown bar style '{BAR_STYLE}', using 'basic'")
         saved_path = create_basic_bar_chart(
             emotion_frequencies,
             output_path,
