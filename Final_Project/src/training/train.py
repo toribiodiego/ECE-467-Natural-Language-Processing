@@ -18,8 +18,9 @@ from typing import Dict, Any, Tuple, List
 import torch
 import torch.nn as nn
 from datasets import DatasetDict
-from transformers import AutoTokenizer, AutoModel, AutoConfig
+from transformers import AutoTokenizer, AutoModel, AutoConfig, get_linear_schedule_with_warmup
 from torch.utils.data import DataLoader, Dataset as TorchDataset
+from tqdm import tqdm
 
 from src.data.load_dataset import load_go_emotions, get_label_names, get_dataset_statistics
 
@@ -707,6 +708,164 @@ def initialize_model(
 
 
 # ============================================================================
+# Training Loop
+# ============================================================================
+
+def train_model(
+    model: MultiLabelClassificationModel,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    args: argparse.Namespace,
+    device: torch.device
+) -> Dict[str, List[float]]:
+    """
+    Train the model for the specified number of epochs.
+
+    Args:
+        model: Model to train
+        train_loader: Training data loader
+        val_loader: Validation data loader
+        args: Parsed command line arguments
+        device: Device to train on (cuda or cpu)
+
+    Returns:
+        Dictionary with training history:
+        {
+            'train_loss': [...],
+            'val_loss': [...],
+            'learning_rates': [...]
+        }
+    """
+    logger.info("")
+    logger.info("=" * 70)
+    logger.info("Training")
+    logger.info("=" * 70)
+
+    # Initialize optimizer
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=args.learning_rate,
+        weight_decay=args.weight_decay
+    )
+
+    # Calculate total training steps
+    total_steps = len(train_loader) * args.epochs
+
+    # Initialize learning rate scheduler
+    scheduler = get_linear_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=args.warmup_steps,
+        num_training_steps=total_steps
+    )
+
+    logger.info(f"Optimizer: Adam (lr={args.learning_rate}, weight_decay={args.weight_decay})")
+    logger.info(f"Scheduler: Linear with warmup (warmup_steps={args.warmup_steps})")
+    logger.info(f"Total training steps: {total_steps}")
+    logger.info(f"Steps per epoch: {len(train_loader)}")
+    logger.info("")
+
+    # Training history
+    history = {
+        'train_loss': [],
+        'val_loss': [],
+        'learning_rates': []
+    }
+
+    # Training loop
+    for epoch in range(args.epochs):
+        logger.info(f"Epoch {epoch + 1}/{args.epochs}")
+        logger.info("-" * 70)
+
+        # Training phase
+        model.train()
+        train_loss = 0.0
+        train_steps = 0
+
+        progress_bar = tqdm(train_loader, desc=f"Training Epoch {epoch + 1}")
+
+        for batch in progress_bar:
+            # Move batch to device
+            batch = {k: v.to(device) for k, v in batch.items()}
+
+            # Forward pass
+            outputs = model(**batch)
+            loss = outputs['loss']
+
+            # Backward pass
+            optimizer.zero_grad()
+            loss.backward()
+
+            # Gradient clipping (optional but recommended)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
+            # Optimizer step
+            optimizer.step()
+            scheduler.step()
+
+            # Track metrics
+            train_loss += loss.item()
+            train_steps += 1
+
+            # Update progress bar
+            current_lr = scheduler.get_last_lr()[0]
+            progress_bar.set_postfix({
+                'loss': f'{loss.item():.4f}',
+                'lr': f'{current_lr:.2e}'
+            })
+
+        # Calculate average training loss
+        avg_train_loss = train_loss / train_steps
+        current_lr = scheduler.get_last_lr()[0]
+
+        # Validation phase
+        model.eval()
+        val_loss = 0.0
+        val_steps = 0
+
+        with torch.no_grad():
+            progress_bar = tqdm(val_loader, desc=f"Validation Epoch {epoch + 1}")
+
+            for batch in progress_bar:
+                # Move batch to device
+                batch = {k: v.to(device) for k, v in batch.items()}
+
+                # Forward pass
+                outputs = model(**batch)
+                loss = outputs['loss']
+
+                # Track metrics
+                val_loss += loss.item()
+                val_steps += 1
+
+                # Update progress bar
+                progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
+
+        # Calculate average validation loss
+        avg_val_loss = val_loss / val_steps
+
+        # Log epoch summary
+        logger.info(f"  Train Loss: {avg_train_loss:.4f}")
+        logger.info(f"  Val Loss:   {avg_val_loss:.4f}")
+        logger.info(f"  Learning Rate: {current_lr:.2e}")
+        logger.info("")
+
+        # Store history
+        history['train_loss'].append(avg_train_loss)
+        history['val_loss'].append(avg_val_loss)
+        history['learning_rates'].append(current_lr)
+
+    logger.info("=" * 70)
+    logger.info("Training Complete")
+    logger.info("=" * 70)
+    logger.info(f"Final train loss: {history['train_loss'][-1]:.4f}")
+    logger.info(f"Final val loss: {history['val_loss'][-1]:.4f}")
+    logger.info(f"Best val loss: {min(history['val_loss']):.4f} (epoch {history['val_loss'].index(min(history['val_loss'])) + 1})")
+    logger.info("=" * 70)
+
+    return history
+
+
+# ============================================================================
 # Main Function
 # ============================================================================
 
@@ -715,8 +874,7 @@ def main() -> None:
     Main entry point for training script.
 
     This function will be expanded in subsequent tasks to include:
-    - Training loop
-    - Evaluation
+    - Evaluation metrics (AUC, F1, precision, recall)
     - Checkpoint saving
     - W&B logging
     """
@@ -742,18 +900,21 @@ def main() -> None:
         # Get device
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        # Placeholder for remaining training implementation
+        # Train model
+        history = train_model(model, train_loader, val_loader, args, device)
+
+        # Placeholder for remaining implementation
         logger.info("")
-        logger.info("Training pipeline will be implemented in subsequent tasks:")
+        logger.info("Training pipeline status:")
         logger.info("  ✓ Data loading")
         logger.info("  ✓ Tokenization and preprocessing")
         logger.info("  ✓ Model initialization")
-        logger.info("  - Training loop with optimization")
-        logger.info("  - Evaluation and metrics calculation")
+        logger.info("  ✓ Training loop with optimization")
+        logger.info("  - Evaluation metrics (AUC, F1, precision, recall)")
         logger.info("  - Checkpoint saving")
         logger.info("  - W&B logging and artifact upload")
         logger.info("")
-        logger.info(f"Ready for training on {device}")
+        logger.info(f"Training complete. Best val loss: {min(history['val_loss']):.4f}")
 
     except ValueError as e:
         logger.error(f"Configuration error: {e}")
