@@ -32,10 +32,11 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # ============================================================================
 
-INCLUDE_NEUTRAL = True   # Include 'neutral' emotion in co-occurrence analysis
+INCLUDE_NEUTRAL = False  # Include 'neutral' emotion in co-occurrence analysis
 GENERATE_HEATMAP = True  # Generate heatmap visualization
 HEATMAP_DPI = 300        # Resolution for heatmap figure
 HEATMAP_FIGSIZE = (16, 14)  # Figure size for heatmap
+MASK_DIAGONAL = True     # Mask diagonal to focus on co-occurrence patterns
 
 
 # ============================================================================
@@ -157,7 +158,8 @@ def create_cooccurrence_heatmap(
     output_path: str,
     figsize: Tuple[float, float] = (16, 14),
     dpi: int = 300,
-    include_neutral: bool = True
+    include_neutral: bool = True,
+    mask_diagonal: bool = True
 ) -> str:
     """
     Create heatmap visualization of label co-occurrence matrix.
@@ -169,6 +171,7 @@ def create_cooccurrence_heatmap(
         figsize: Figure dimensions (width, height) in inches
         dpi: Resolution for saved figure
         include_neutral: Whether neutral was included
+        mask_diagonal: Whether to mask diagonal (focuses on co-occurrences)
 
     Returns:
         Absolute path to saved figure
@@ -178,6 +181,11 @@ def create_cooccurrence_heatmap(
         filtered_names = [name for name in label_names if name != 'neutral']
     else:
         filtered_names = label_names
+
+    # Create mask for diagonal if requested
+    mask = None
+    if mask_diagonal:
+        mask = np.eye(cooccurrence_matrix.shape[0], dtype=bool)
 
     # Create figure
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
@@ -193,17 +201,45 @@ def create_cooccurrence_heatmap(
         ax=ax,
         square=True,
         linewidths=0.5,
-        linecolor='lightgray'
+        linecolor='lightgray',
+        mask=mask,
+        annot=False  # Don't annotate all cells (too cluttered)
     )
+
+    # Find and annotate top co-occurrence pairs
+    n = cooccurrence_matrix.shape[0]
+    top_pairs = []
+    for i in range(n):
+        for j in range(i + 1, n):  # Upper triangle only
+            count = cooccurrence_matrix[i, j]
+            if count > 0:
+                top_pairs.append((i, j, count, filtered_names[i], filtered_names[j]))
+
+    # Sort by count and get top 10
+    top_pairs.sort(key=lambda x: x[2], reverse=True)
+    top_10_pairs = top_pairs[:10]
+
+    # Annotate top pairs on the heatmap
+    for i, j, count, _, _ in top_10_pairs:
+        # Annotate both upper and lower triangle for symmetry
+        ax.text(j + 0.5, i + 0.5, str(count),
+               ha='center', va='center', fontsize=8, fontweight='bold',
+               color='black' if count < cooccurrence_matrix.max() * 0.7 else 'white')
+        ax.text(i + 0.5, j + 0.5, str(count),
+               ha='center', va='center', fontsize=8, fontweight='bold',
+               color='black' if count < cooccurrence_matrix.max() * 0.7 else 'white')
 
     # Customize appearance
     ax.set_xlabel('Emotion', fontsize=14, fontweight='bold', labelpad=10)
     ax.set_ylabel('Emotion', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_title('Label Co-occurrence Matrix', fontsize=16, fontweight='bold', pad=15)
+    title = 'Label Co-occurrence Matrix'
+    if mask_diagonal:
+        title += ' (diagonal masked)'
+    ax.set_title(title, fontsize=16, fontweight='bold', pad=15)
 
     # Rotate labels for readability
-    plt.xticks(rotation=45, ha='right')
-    plt.yticks(rotation=0)
+    plt.xticks(rotation=45, ha='right', fontsize=9)
+    plt.yticks(rotation=0, fontsize=9)
 
     # Tight layout
     plt.tight_layout()
@@ -283,7 +319,8 @@ def main() -> None:
             heatmap_path,
             figsize=HEATMAP_FIGSIZE,
             dpi=HEATMAP_DPI,
-            include_neutral=INCLUDE_NEUTRAL
+            include_neutral=INCLUDE_NEUTRAL,
+            mask_diagonal=MASK_DIAGONAL
         )
         logger.info(f"Heatmap saved to: {heatmap_saved_path}")
 
@@ -298,15 +335,17 @@ def main() -> None:
     off_diagonal_mask = ~np.eye(n_labels, dtype=bool)
     total_cooccurrences = cooccurrence_matrix[off_diagonal_mask].sum() // 2  # Divide by 2 because matrix is symmetric
 
-    # Find most common co-occurrence pairs
-    max_cooccurrence = 0
-    max_pair = None
+    # Find top 10 most common co-occurrence pairs
+    top_pairs = []
     for i in range(n_labels):
         for j in range(i + 1, n_labels):  # Only upper triangle
             count = cooccurrence_matrix[i, j]
-            if count > max_cooccurrence:
-                max_cooccurrence = count
-                max_pair = (filtered_labels[i], filtered_labels[j])
+            if count > 0:
+                top_pairs.append((count, filtered_labels[i], filtered_labels[j]))
+
+    # Sort by count descending
+    top_pairs.sort(reverse=True)
+    top_10_pairs = top_pairs[:10]
 
     # Report results
     logger.info("="*70)
@@ -316,12 +355,15 @@ def main() -> None:
     logger.info(f"  - Include neutral: {INCLUDE_NEUTRAL}")
     logger.info(f"  - Number of labels: {n_labels}")
     logger.info(f"  - Generate heatmap: {GENERATE_HEATMAP}")
+    logger.info(f"  - Mask diagonal: {MASK_DIAGONAL}")
     logger.info("")
     logger.info("Statistics:")
     logger.info(f"  - Total label occurrences: {total_samples_with_labels:,}")
     logger.info(f"  - Total co-occurrences: {total_cooccurrences:,}")
-    if max_pair:
-        logger.info(f"  - Most common pair: '{max_pair[0]}' + '{max_pair[1]}' ({max_cooccurrence:,} times)")
+    logger.info("")
+    logger.info("Top 10 most common co-occurring pairs:")
+    for rank, (count, label1, label2) in enumerate(top_10_pairs, 1):
+        logger.info(f"  {rank:2d}. {label1:15s} + {label2:15s} = {count:4d} times")
     logger.info("="*70)
 
     print(f"\nCo-occurrence matrix saved to: {csv_saved_path}")
