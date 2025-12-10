@@ -31,6 +31,7 @@ from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_sco
 from src.data.load_dataset import get_dataset_statistics
 from src.training.data_utils import load_dataset_with_limits, create_dataloaders
 from src.training.metrics_utils import evaluate_with_threshold, log_evaluation_results
+from src.training.loss_utils import get_loss_function, compute_class_weights, TrainingCostTracker
 
 
 # Configure logging
@@ -141,6 +142,35 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=42,
         help='Random seed for reproducibility'
+    )
+
+    # Loss configuration
+    loss_group = parser.add_argument_group('Loss Configuration')
+    loss_group.add_argument(
+        '--loss-type',
+        type=str,
+        default='bce',
+        choices=['bce', 'weighted_bce', 'focal'],
+        help='Loss function type'
+    )
+    loss_group.add_argument(
+        '--class-weight-method',
+        type=str,
+        default='inverse',
+        choices=['inverse', 'sqrt_inverse', 'effective_samples', 'none'],
+        help='Method for computing class weights (used with weighted_bce)'
+    )
+    loss_group.add_argument(
+        '--focal-alpha',
+        type=float,
+        default=0.25,
+        help='Alpha parameter for focal loss'
+    )
+    loss_group.add_argument(
+        '--focal-gamma',
+        type=float,
+        default=2.0,
+        help='Gamma parameter for focal loss'
     )
 
     # Testing and debugging
@@ -355,7 +385,8 @@ class MultiLabelClassificationModel(nn.Module):
         self,
         model_name_or_path: str,
         num_labels: int,
-        dropout: float = 0.1
+        dropout: float = 0.1,
+        loss_fn: Optional[nn.Module] = None
     ):
         """
         Initialize multi-label classification model.
@@ -364,6 +395,7 @@ class MultiLabelClassificationModel(nn.Module):
             model_name_or_path: HuggingFace model identifier
             num_labels: Number of labels for classification (28 for GoEmotions)
             dropout: Dropout probability for classification head
+            loss_fn: Custom loss function (defaults to BCEWithLogitsLoss)
         """
         super().__init__()
 
@@ -377,6 +409,9 @@ class MultiLabelClassificationModel(nn.Module):
         # Classification head
         self.dropout = nn.Dropout(dropout)
         self.classifier = nn.Linear(self.hidden_size, num_labels)
+
+        # Loss function
+        self.loss_fn = loss_fn if loss_fn is not None else nn.BCEWithLogitsLoss()
 
         # Store configuration
         self.num_labels = num_labels
@@ -414,9 +449,7 @@ class MultiLabelClassificationModel(nn.Module):
         # Calculate loss if labels provided
         loss = None
         if labels is not None:
-            # Binary cross-entropy with logits for multi-label classification
-            loss_fct = nn.BCEWithLogitsLoss()
-            loss = loss_fct(logits, labels)
+            loss = self.loss_fn(logits, labels)
 
         return {
             'logits': logits,
@@ -427,7 +460,8 @@ class MultiLabelClassificationModel(nn.Module):
 def initialize_model(
     model_name: str,
     num_labels: int,
-    args: argparse.Namespace
+    args: argparse.Namespace,
+    loss_fn: Optional[nn.Module] = None
 ) -> MultiLabelClassificationModel:
     """
     Initialize pretrained model for multi-label classification.
@@ -436,6 +470,7 @@ def initialize_model(
         model_name: CLI model name (e.g., 'roberta-large')
         num_labels: Number of emotion labels
         args: Parsed command line arguments
+        loss_fn: Optional custom loss function
 
     Returns:
         Initialized model ready for training
@@ -457,7 +492,8 @@ def initialize_model(
         model = MultiLabelClassificationModel(
             model_name_or_path=model_name_or_path,
             num_labels=num_labels,
-            dropout=args.dropout
+            dropout=args.dropout,
+            loss_fn=loss_fn
         )
 
         logger.info(f"Model loaded: {model.__class__.__name__}")
@@ -543,6 +579,9 @@ def train_model(
     logger.info(f"Total training steps: {total_steps}")
     logger.info(f"Steps per epoch: {len(train_loader)}")
     logger.info("")
+
+    # Initialize cost tracker
+    cost_tracker = TrainingCostTracker()
 
     # Training history
     history = {
@@ -679,6 +718,10 @@ def train_model(
         history['learning_rates'].append(current_lr)
         history['epoch_times'].append(epoch_time)
 
+        # Track training costs
+        num_samples = len(train_loader.dataset)
+        cost_tracker.log_epoch(epoch_time, num_samples, logger_instance=logger)
+
     # Calculate total training time
     total_training_time = time.time() - training_start_time
     hours = int(total_training_time // 3600)
@@ -695,6 +738,10 @@ def train_model(
     logger.info(f"Best Val Loss:    {min(history['val_loss']):.4f} (epoch {history['val_loss'].index(min(history['val_loss'])) + 1})")
     logger.info(f"Best Val AUC:     {max(history['val_auc']):.4f} (epoch {history['val_auc'].index(max(history['val_auc'])) + 1})")
     logger.info("=" * 70)
+
+    # Log cost summary
+    cost_stats = cost_tracker.log_summary(logger_instance=logger)
+    history['cost_stats'] = cost_stats
 
     return history
 
@@ -923,11 +970,32 @@ def main() -> None:
             seed=args.seed
         )
 
-        # Initialize model
-        model = initialize_model(args.model, num_labels, args)
-
-        # Get device
+        # Get device first (needed for loss function)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        # Configure loss function
+        class_weights = None
+        if args.loss_type == 'weighted_bce' and args.class_weight_method != 'none':
+            # Compute class weights from dataset statistics
+            stats = get_dataset_statistics(dataset)
+            label_counts = stats['label_distribution']
+            total_samples = len(dataset['train'])
+            class_weights = compute_class_weights(
+                label_counts=label_counts,
+                total_samples=total_samples,
+                method=args.class_weight_method
+            )
+
+        loss_fn = get_loss_function(
+            loss_type=args.loss_type,
+            class_weights=class_weights,
+            focal_alpha=args.focal_alpha,
+            focal_gamma=args.focal_gamma,
+            device=device
+        )
+
+        # Initialize model with configured loss
+        model = initialize_model(args.model, num_labels, args, loss_fn=loss_fn)
 
         # Train model
         history = train_model(model, train_loader, val_loader, args, device)
