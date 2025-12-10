@@ -23,13 +23,13 @@ from typing import Dict, Any, Tuple, List, Optional
 import torch
 import torch.nn as nn
 import numpy as np
-from datasets import DatasetDict
 from transformers import AutoTokenizer, AutoModel, AutoConfig, get_linear_schedule_with_warmup
-from torch.utils.data import DataLoader, Dataset as TorchDataset
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score
 
-from src.data.load_dataset import load_go_emotions, get_label_names, get_dataset_statistics
+from src.data.load_dataset import get_dataset_statistics
+from src.training.data_utils import load_dataset_with_limits, create_dataloaders
 
 
 # Configure logging
@@ -61,55 +61,6 @@ def get_model_name_or_path(model_name: str) -> str:
     }
 
     return model_mapping.get(model_name, model_name)
-
-
-# ============================================================================
-# Dataset and DataLoader
-# ============================================================================
-
-class GoEmotionsDataset(TorchDataset):
-    """
-    PyTorch Dataset wrapper for GoEmotions with tokenized inputs.
-
-    Converts HuggingFace dataset samples to PyTorch tensors suitable for
-    multi-label classification training.
-    """
-
-    def __init__(self, encodings: Dict[str, List], labels: List[List[int]], num_labels: int):
-        """
-        Initialize dataset.
-
-        Args:
-            encodings: Dictionary with 'input_ids' and 'attention_mask'
-            labels: List of label lists (multi-label format)
-            num_labels: Total number of possible labels
-        """
-        self.encodings = encodings
-        self.labels = labels
-        self.num_labels = num_labels
-
-    def __len__(self) -> int:
-        return len(self.labels)
-
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
-        """
-        Get a single sample.
-
-        Returns:
-            Dictionary with input_ids, attention_mask, and labels tensors
-        """
-        item = {
-            'input_ids': torch.tensor(self.encodings['input_ids'][idx]),
-            'attention_mask': torch.tensor(self.encodings['attention_mask'][idx])
-        }
-
-        # Convert multi-label to binary vector
-        label_vector = torch.zeros(self.num_labels)
-        for label_idx in self.labels[idx]:
-            label_vector[label_idx] = 1.0
-
-        item['labels'] = label_vector
-        return item
 
 
 # ============================================================================
@@ -385,185 +336,6 @@ def print_configuration(args: argparse.Namespace) -> None:
         logger.warning(f"Limiting evaluation to {args.max_eval_samples} samples (TEST MODE)")
 
     logger.info("=" * 70)
-
-
-# ============================================================================
-# Data Loading
-# ============================================================================
-
-def load_data(args: argparse.Namespace) -> Tuple[DatasetDict, List[str], int]:
-    """
-    Load GoEmotions dataset with optional sample limiting for testing.
-
-    Args:
-        args: Parsed command line arguments
-
-    Returns:
-        Tuple of (dataset, label_names, num_labels):
-        - dataset: DatasetDict with train/validation/test splits
-        - label_names: List of emotion label names
-        - num_labels: Number of emotion labels (28 for GoEmotions)
-
-    Raises:
-        RuntimeError: If dataset loading fails
-    """
-    logger.info("")
-    logger.info("=" * 70)
-    logger.info("Loading Dataset")
-    logger.info("=" * 70)
-
-    try:
-        # Load dataset from HuggingFace Hub
-        dataset = load_go_emotions()
-
-        # Get label information
-        label_names = get_label_names(dataset)
-        num_labels = len(label_names)
-
-        logger.info(f"Loaded {num_labels} emotion labels")
-        logger.debug(f"Labels: {', '.join(label_names)}")
-
-        # Apply sample limiting for testing if specified
-        if args.max_train_samples is not None:
-            original_size = len(dataset['train'])
-            dataset['train'] = dataset['train'].select(range(min(args.max_train_samples, original_size)))
-            logger.warning(f"Limited training samples: {original_size:,} → {len(dataset['train']):,}")
-
-        if args.max_eval_samples is not None:
-            original_val_size = len(dataset['validation'])
-            dataset['validation'] = dataset['validation'].select(range(min(args.max_eval_samples, original_val_size)))
-            logger.warning(f"Limited validation samples: {original_val_size:,} → {len(dataset['validation']):,}")
-
-            original_test_size = len(dataset['test'])
-            dataset['test'] = dataset['test'].select(range(min(args.max_eval_samples, original_test_size)))
-            logger.warning(f"Limited test samples: {original_test_size:,} → {len(dataset['test']):,}")
-
-        # Print final dataset statistics
-        logger.info("")
-        logger.info("Final dataset sizes:")
-        logger.info(f"  Train:      {len(dataset['train']):,} samples")
-        logger.info(f"  Validation: {len(dataset['validation']):,} samples")
-        logger.info(f"  Test:       {len(dataset['test']):,} samples")
-        logger.info(f"  Total:      {len(dataset['train']) + len(dataset['validation']) + len(dataset['test']):,} samples")
-
-        logger.info("=" * 70)
-
-        return dataset, label_names, num_labels
-
-    except Exception as e:
-        logger.error(f"Failed to load dataset: {e}")
-        raise RuntimeError(f"Dataset loading failed: {e}") from e
-
-
-def tokenize_and_create_dataloaders(
-    dataset: DatasetDict,
-    num_labels: int,
-    args: argparse.Namespace
-) -> Tuple[DataLoader, DataLoader, DataLoader, AutoTokenizer]:
-    """
-    Tokenize dataset and create DataLoaders for training.
-
-    Args:
-        dataset: DatasetDict with train/validation/test splits
-        num_labels: Number of emotion labels
-        args: Parsed command line arguments
-
-    Returns:
-        Tuple of (train_loader, val_loader, test_loader, tokenizer)
-
-    Raises:
-        RuntimeError: If tokenization fails
-    """
-    logger.info("")
-    logger.info("=" * 70)
-    logger.info("Tokenization and Preprocessing")
-    logger.info("=" * 70)
-
-    try:
-        # Load tokenizer for the specified model
-        model_name_or_path = get_model_name_or_path(args.model)
-        logger.info(f"Loading tokenizer for {model_name_or_path}...")
-
-        tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-        logger.info(f"Tokenizer loaded: {tokenizer.__class__.__name__}")
-
-        # Tokenize each split
-        logger.info(f"Tokenizing texts (max_length={args.max_seq_length})...")
-
-        def tokenize_split(split_data):
-            """Helper to tokenize a dataset split."""
-            texts = split_data['text']
-            labels = split_data['labels']
-
-            # Tokenize texts
-            encodings = tokenizer(
-                texts,
-                truncation=True,
-                padding='max_length',
-                max_length=args.max_seq_length,
-                return_tensors=None  # Return lists, not tensors
-            )
-
-            return encodings, labels
-
-        # Tokenize all splits
-        train_encodings, train_labels = tokenize_split(dataset['train'])
-        val_encodings, val_labels = tokenize_split(dataset['validation'])
-        test_encodings, test_labels = tokenize_split(dataset['test'])
-
-        logger.info(f"  Train: {len(train_labels):,} samples tokenized")
-        logger.info(f"  Validation: {len(val_labels):,} samples tokenized")
-        logger.info(f"  Test: {len(test_labels):,} samples tokenized")
-
-        # Create PyTorch datasets
-        logger.info("Creating PyTorch datasets...")
-        train_dataset = GoEmotionsDataset(train_encodings, train_labels, num_labels)
-        val_dataset = GoEmotionsDataset(val_encodings, val_labels, num_labels)
-        test_dataset = GoEmotionsDataset(test_encodings, test_labels, num_labels)
-
-        # Create DataLoaders
-        logger.info(f"Creating DataLoaders (batch_size={args.batch_size})...")
-
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=args.batch_size,
-            shuffle=True,
-            num_workers=0  # Set to 0 for compatibility
-        )
-
-        val_loader = DataLoader(
-            val_dataset,
-            batch_size=args.batch_size,
-            shuffle=False,
-            num_workers=0
-        )
-
-        test_loader = DataLoader(
-            test_dataset,
-            batch_size=args.batch_size,
-            shuffle=False,
-            num_workers=0
-        )
-
-        logger.info(f"  Train batches: {len(train_loader):,}")
-        logger.info(f"  Validation batches: {len(val_loader):,}")
-        logger.info(f"  Test batches: {len(test_loader):,}")
-
-        # Show sample batch info
-        sample_batch = next(iter(train_loader))
-        logger.info("")
-        logger.info("Sample batch shapes:")
-        logger.info(f"  input_ids: {sample_batch['input_ids'].shape}")
-        logger.info(f"  attention_mask: {sample_batch['attention_mask'].shape}")
-        logger.info(f"  labels: {sample_batch['labels'].shape}")
-
-        logger.info("=" * 70)
-
-        return train_loader, val_loader, test_loader, tokenizer
-
-    except Exception as e:
-        logger.error(f"Failed to tokenize and create dataloaders: {e}")
-        raise RuntimeError(f"Tokenization failed: {e}") from e
 
 
 # ============================================================================
@@ -1156,11 +928,20 @@ def main() -> None:
         print_configuration(args)
 
         # Load dataset
-        dataset, label_names, num_labels = load_data(args)
+        dataset, label_names, num_labels = load_dataset_with_limits(
+            max_train_samples=args.max_train_samples,
+            max_eval_samples=args.max_eval_samples
+        )
 
         # Tokenize and create dataloaders
-        train_loader, val_loader, test_loader, tokenizer = tokenize_and_create_dataloaders(
-            dataset, num_labels, args
+        model_name_or_path = get_model_name_or_path(args.model)
+        train_loader, val_loader, test_loader, tokenizer = create_dataloaders(
+            dataset=dataset,
+            num_labels=num_labels,
+            model_name_or_path=model_name_or_path,
+            batch_size=args.batch_size,
+            max_seq_length=args.max_seq_length,
+            seed=args.seed
         )
 
         # Initialize model
