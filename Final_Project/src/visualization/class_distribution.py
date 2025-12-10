@@ -105,8 +105,8 @@ BAR_STYLE = 'stacked'    # Visualization style (default: 'stacked')
 
 COLOR_SCHEME = 'default' # Color palette for multi-label categories
                          # Effect on output:
-                         #   'default': Blue (#1f77b4), Orange (#ff7f0e), Green (#2ca02c)
-                         #              High contrast, works well for most displays
+                         #   'default': Blue (#0000ff), Green (#00ff00), Red (#ff0000)
+                         #              Pure RGB colors, high visibility when scaled down
                          #   'colorblind': Blue/Orange/Green optimized for colorblindness
                          #                 (Okabe-Ito palette, safe for deuteranopia)
                          #   'sequential': Dark/Medium/Light blue gradient
@@ -155,9 +155,9 @@ def get_color_scheme(scheme: str = 'default') -> Tuple[str, str, str]:
     """
     schemes = {
         'default': {
-            '1_label': '#1f77b4',      # Distinct blue
-            '2_labels': '#ff7f0e',     # Distinct orange
-            '3plus_labels': '#2ca02c'  # Distinct green
+            '1_label': '#0000ff',      # Pure blue (red=0, green=0, blue=max)
+            '2_labels': '#00ff00',     # Pure green (red=0, green=max, blue=0)
+            '3plus_labels': '#ff0000'  # Pure red (red=max, green=0, blue=0)
         },
         'colorblind': {
             '1_label': '#0173B2',      # Blue (colorblind safe)
@@ -480,15 +480,15 @@ def create_stacked_bar_chart(
     # Customize appearance
     ax.set_xlabel('Emotion', fontsize=12, fontweight='bold')
     ax.set_ylabel('Frequency', fontsize=12, fontweight='bold')
-    ax.set_title('GoEmotions: Emotion Distribution with Multi-Label Breakdown',
+    ax.set_title('GoEmotions: Multi-Label Distribution',
                  fontsize=14, fontweight='bold')
 
     # Set x-axis labels
     ax.set_xticks(x_pos)
     ax.set_xticklabels(emotions, rotation=45, ha='right')
 
-    # Add legend
-    ax.legend(loc='upper right', framealpha=0.95)
+    # Add legend with larger font
+    ax.legend(loc='upper right', framealpha=0.95, fontsize=11)
 
     # Add grid for readability
     ax.grid(axis='y', alpha=0.3, linestyle='--')
