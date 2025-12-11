@@ -37,6 +37,8 @@ from src.training.wandb_utils import (
     log_training_metrics,
     log_evaluation_metrics,
     log_artifact_checkpoint,
+    log_artifact_predictions,
+    log_artifact_metrics,
     finish_wandb
 )
 
@@ -761,7 +763,7 @@ def train_model(
         if hasattr(val_loader.dataset, 'texts') and val_loader.dataset.texts is not None:
             val_texts = list(val_loader.dataset.texts)
             predictions_dir = Path(args.output_dir).parent / "predictions"
-            save_predictions_to_csv(
+            val_predictions_path = save_predictions_to_csv(
                 predictions_dir=predictions_dir,
                 model_name=args.model,
                 split_name=f'val_epoch{epoch + 1}',
@@ -771,6 +773,16 @@ def train_model(
                 label_names=label_names,
                 threshold=args.threshold
             )
+
+            # Upload validation predictions as W&B artifact
+            if use_wandb:
+                log_artifact_predictions(
+                    predictions_path=val_predictions_path,
+                    artifact_type='val-predictions',
+                    model_name=args.model,
+                    split_name=f'validation_epoch{epoch + 1}',
+                    use_wandb=use_wandb
+                )
 
         # Calculate epoch time and estimate remaining time
         epoch_time = time.time() - epoch_start_time
@@ -1288,7 +1300,7 @@ def main() -> None:
         # Save test predictions to CSV if texts are available
         if test_texts is not None:
             predictions_dir = Path(args.output_dir).parent / "predictions"
-            save_predictions_to_csv(
+            test_predictions_path = save_predictions_to_csv(
                 predictions_dir=predictions_dir,
                 model_name=args.model,
                 split_name='test',
@@ -1299,14 +1311,32 @@ def main() -> None:
                 threshold=args.threshold
             )
 
+            # Upload test predictions as W&B artifact
+            if use_wandb:
+                log_artifact_predictions(
+                    predictions_path=test_predictions_path,
+                    artifact_type='test-predictions',
+                    model_name=args.model,
+                    split_name='test',
+                    use_wandb=use_wandb
+                )
+
         # Save per-class metrics to CSV
         stats_dir = Path(args.output_dir).parent / "stats"
-        save_per_class_metrics_to_csv(
+        metrics_path = save_per_class_metrics_to_csv(
             stats_dir=stats_dir,
             model_name=args.model,
             metrics=test_metrics,
             label_names=label_names
         )
+
+        # Upload per-class metrics as W&B artifact
+        if use_wandb:
+            log_artifact_metrics(
+                metrics_path=metrics_path,
+                model_name=args.model,
+                use_wandb=use_wandb
+            )
 
         # Calculate best epoch and total training time
         best_epoch = int(history['val_auc'].index(max(history['val_auc'])) + 1)
