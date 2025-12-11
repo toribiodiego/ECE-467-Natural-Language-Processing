@@ -597,6 +597,7 @@ def train_model(
     val_loader: DataLoader,
     args: argparse.Namespace,
     device: torch.device,
+    label_names: List[str],
     use_wandb: bool = False
 ) -> Dict[str, List[float]]:
     """
@@ -608,6 +609,8 @@ def train_model(
         val_loader: Validation data loader
         args: Parsed command line arguments
         device: Device to train on (cuda or cpu)
+        label_names: List of label names for predictions export
+        use_wandb: Whether to log to W&B
 
     Returns:
         Dictionary with training history:
@@ -754,6 +757,21 @@ def train_model(
         except ValueError:
             val_auc = 0.0
 
+        # Save validation predictions if texts are available
+        if hasattr(val_loader.dataset, 'texts') and val_loader.dataset.texts is not None:
+            val_texts = list(val_loader.dataset.texts)
+            predictions_dir = Path(args.output_dir).parent / "predictions"
+            save_predictions_to_csv(
+                predictions_dir=predictions_dir,
+                model_name=args.model,
+                split_name=f'val_epoch{epoch + 1}',
+                texts=val_texts,
+                true_labels=val_labels_all,
+                pred_probs=val_probs,
+                label_names=label_names,
+                threshold=args.threshold
+            )
+
         # Calculate epoch time and estimate remaining time
         epoch_time = time.time() - epoch_start_time
         avg_epoch_time = (time.time() - training_start_time) / (epoch + 1)
@@ -840,7 +858,7 @@ def evaluate_model(
     threshold_strategy: str = 'global',
     threshold: float = 0.5,
     top_k: int = 1
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], np.ndarray, np.ndarray, Optional[List[str]]]:
     """
     Evaluate the model and compute comprehensive metrics.
 
@@ -859,17 +877,11 @@ def evaluate_model(
         top_k: Number of top predictions to select (used with 'top_k' strategy)
 
     Returns:
-        Dictionary containing:
-        {
-            'auc': float,
-            'macro_f1': float,
-            'micro_f1': float,
-            'macro_precision': float,
-            'micro_precision': float,
-            'macro_recall': float,
-            'micro_recall': float,
-            'per_class_f1': Dict[str, float]
-        }
+        Tuple containing:
+        - metrics: Dictionary with evaluation metrics (AUC, F1, etc.)
+        - all_probs: np.ndarray of predicted probabilities, shape (N, num_labels)
+        - all_labels: np.ndarray of true labels, shape (N, num_labels)
+        - all_texts: Optional list of input texts (if available from dataset)
     """
     logger.info("")
     logger.info("=" * 70)
@@ -954,7 +966,13 @@ def evaluate_model(
         'confusion_summary': results.get('confusion_summary', {})
     }
 
-    return metrics
+    # Extract texts from dataset if available
+    all_texts = None
+    if hasattr(dataloader.dataset, 'texts') and dataloader.dataset.texts is not None:
+        all_texts = list(dataloader.dataset.texts)
+        logger.info(f"Collected {len(all_texts)} text samples for predictions export")
+
+    return metrics, all_probs, all_labels_np, all_texts
 
 
 # ============================================================================
@@ -1032,6 +1050,144 @@ def save_checkpoint(
     logger.info("=" * 70)
 
     return str(checkpoint_path)
+
+
+# ============================================================================
+# Prediction Export
+# ============================================================================
+
+def save_predictions_to_csv(
+    predictions_dir: Path,
+    model_name: str,
+    split_name: str,
+    texts: List[str],
+    true_labels: np.ndarray,
+    pred_probs: np.ndarray,
+    label_names: List[str],
+    threshold: float = 0.5
+) -> str:
+    """
+    Save predictions to CSV file for ablation studies and analysis.
+
+    Args:
+        predictions_dir: Directory to save predictions
+        model_name: Name of the model (for filename)
+        split_name: Name of split ('val' or 'test')
+        texts: List of input text strings
+        true_labels: Binary label matrix, shape (N, num_labels)
+        pred_probs: Predicted probabilities, shape (N, num_labels)
+        label_names: List of label names (28 emotions)
+        threshold: Threshold for converting probabilities to binary predictions
+
+    Returns:
+        Path to saved CSV file
+    """
+    import csv
+
+    # Create predictions directory if it doesn't exist
+    predictions_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate timestamp and filename
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    filename = f"{split_name}_predictions_{model_name}_{timestamp}.csv"
+    filepath = predictions_dir / filename
+
+    # Convert true labels and predictions to label names
+    def labels_to_names(binary_vector, names):
+        """Convert binary vector to comma-separated label names."""
+        return ','.join([names[i] for i, val in enumerate(binary_vector) if val > 0.5])
+
+    def probs_to_names(prob_vector, names, thresh):
+        """Convert probabilities to comma-separated label names at threshold."""
+        return ','.join([names[i] for i, val in enumerate(prob_vector) if val >= thresh])
+
+    # Write CSV
+    logger.info(f"Saving {split_name} predictions to {filepath}...")
+
+    with open(filepath, 'w', newline='', encoding='utf-8') as f:
+        # Define column names
+        fieldnames = ['text', 'true_labels', 'pred_labels'] + [f'pred_prob_{name}' for name in label_names]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+
+        writer.writeheader()
+
+        for i in range(len(texts)):
+            row = {
+                'text': texts[i],
+                'true_labels': labels_to_names(true_labels[i], label_names),
+                'pred_labels': probs_to_names(pred_probs[i], label_names, threshold)
+            }
+
+            # Add probability columns
+            for j, label_name in enumerate(label_names):
+                row[f'pred_prob_{label_name}'] = f"{pred_probs[i, j]:.6f}"
+
+            writer.writerow(row)
+
+    logger.info(f"  ✓ Saved {len(texts)} predictions to: {filename}")
+    return str(filepath)
+
+
+def save_per_class_metrics_to_csv(
+    stats_dir: Path,
+    model_name: str,
+    metrics: Dict[str, Any],
+    label_names: List[str]
+) -> str:
+    """
+    Save per-class metrics to CSV file for analysis.
+
+    Args:
+        stats_dir: Directory to save stats
+        model_name: Name of the model (for filename)
+        metrics: Metrics dictionary from evaluate_model()
+        label_names: List of label names (28 emotions)
+
+    Returns:
+        Path to saved CSV file
+    """
+    import csv
+
+    # Create stats directory if it doesn't exist
+    stats_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate timestamp and filename
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    filename = f"per_class_metrics_{model_name}_{timestamp}.csv"
+    filepath = stats_dir / filename
+
+    # Extract per-class data
+    per_class_f1 = metrics.get('per_class_f1', {})
+    per_class_precision = metrics.get('per_class_precision', {})
+    per_class_recall = metrics.get('per_class_recall', {})
+    confusion_summary = metrics.get('confusion_summary', {})
+
+    # Write CSV
+    logger.info(f"Saving per-class metrics to {filepath}...")
+
+    with open(filepath, 'w', newline='', encoding='utf-8') as f:
+        fieldnames = ['emotion', 'f1_score', 'precision', 'recall', 'support', 'tp', 'fp', 'fn', 'tn']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+
+        writer.writeheader()
+
+        for emotion in label_names:
+            confusion = confusion_summary.get(emotion, {})
+            row = {
+                'emotion': emotion,
+                'f1_score': f"{per_class_f1.get(emotion, 0.0):.6f}",
+                'precision': f"{per_class_precision.get(emotion, 0.0):.6f}",
+                'recall': f"{per_class_recall.get(emotion, 0.0):.6f}",
+                'support': confusion.get('support', 0),
+                'tp': confusion.get('true_positives', 0),
+                'fp': confusion.get('false_positives', 0),
+                'fn': confusion.get('false_negatives', 0),
+                'tn': confusion.get('true_negatives', 0)
+            }
+            writer.writerow(row)
+
+    logger.info(f"  ✓ Saved metrics for {len(label_names)} emotions to: {filename}")
+    return str(filepath)
 
 
 # ============================================================================
@@ -1116,10 +1272,10 @@ def main() -> None:
         use_wandb = wandb_run is not None
 
         # Train model
-        history = train_model(model, train_loader, val_loader, args, device, use_wandb=use_wandb)
+        history = train_model(model, train_loader, val_loader, args, device, label_names, use_wandb=use_wandb)
 
         # Evaluate model on test set with threshold settings
-        test_metrics = evaluate_model(
+        test_metrics, test_probs, test_labels, test_texts = evaluate_model(
             model=model,
             dataloader=test_loader,
             device=device,
@@ -1127,6 +1283,29 @@ def main() -> None:
             threshold_strategy=args.threshold_strategy,
             threshold=args.threshold,
             top_k=args.top_k
+        )
+
+        # Save test predictions to CSV if texts are available
+        if test_texts is not None:
+            predictions_dir = Path(args.output_dir).parent / "predictions"
+            save_predictions_to_csv(
+                predictions_dir=predictions_dir,
+                model_name=args.model,
+                split_name='test',
+                texts=test_texts,
+                true_labels=test_labels,
+                pred_probs=test_probs,
+                label_names=label_names,
+                threshold=args.threshold
+            )
+
+        # Save per-class metrics to CSV
+        stats_dir = Path(args.output_dir).parent / "stats"
+        save_per_class_metrics_to_csv(
+            stats_dir=stats_dir,
+            model_name=args.model,
+            metrics=test_metrics,
+            label_names=label_names
         )
 
         # Calculate best epoch and total training time

@@ -8,7 +8,7 @@ and token coverage statistics.
 
 import logging
 import random
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import numpy as np
 import torch
 from datasets import DatasetDict
@@ -30,7 +30,13 @@ class GoEmotionsDataset(TorchDataset):
     multi-label classification training.
     """
 
-    def __init__(self, encodings: Dict[str, List], labels: List[List[int]], num_labels: int):
+    def __init__(
+        self,
+        encodings: Dict[str, List],
+        labels: List[List[int]],
+        num_labels: int,
+        texts: Optional[List[str]] = None
+    ):
         """
         Initialize dataset.
 
@@ -38,10 +44,12 @@ class GoEmotionsDataset(TorchDataset):
             encodings: Dictionary with 'input_ids' and 'attention_mask'
             labels: List of label lists (multi-label format)
             num_labels: Total number of possible labels
+            texts: Optional list of original text strings (for prediction export)
         """
         self.encodings = encodings
         self.labels = labels
         self.num_labels = num_labels
+        self.texts = texts
 
     def __len__(self) -> int:
         return len(self.labels)
@@ -269,11 +277,16 @@ def create_dataloaders(
         logger.info(f"  Validation: {len(val_labels):,} samples tokenized")
         logger.info(f"  Test: {len(test_labels):,} samples tokenized")
 
+        # Extract texts from raw datasets for prediction export
+        train_texts = dataset['train']['text']
+        val_texts = dataset['validation']['text']
+        test_texts = dataset['test']['text']
+
         # Create PyTorch datasets
         logger.info("Creating PyTorch datasets...")
-        train_dataset = GoEmotionsDataset(train_encodings, train_labels, num_labels)
-        val_dataset = GoEmotionsDataset(val_encodings, val_labels, num_labels)
-        test_dataset = GoEmotionsDataset(test_encodings, test_labels, num_labels)
+        train_dataset = GoEmotionsDataset(train_encodings, train_labels, num_labels, texts=train_texts)
+        val_dataset = GoEmotionsDataset(val_encodings, val_labels, num_labels, texts=val_texts)
+        test_dataset = GoEmotionsDataset(test_encodings, test_labels, num_labels, texts=test_texts)
 
         # Create DataLoaders with seed control
         logger.info(f"Creating DataLoaders (batch_size={batch_size}, seed={seed})...")

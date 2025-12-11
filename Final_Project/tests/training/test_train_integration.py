@@ -94,6 +94,7 @@ class TestTrainingPipelineIntegration:
             val_loader=val_loader,
             args=basic_args,
             device=device,
+            label_names=label_names,
             use_wandb=False
         )
 
@@ -111,7 +112,7 @@ class TestTrainingPipelineIntegration:
             assert loss > 0, "Train loss should be positive"
 
         # Evaluate on test set
-        test_metrics = evaluate_model(
+        test_metrics, test_probs, test_labels, test_texts = evaluate_model(
             model=model,
             dataloader=test_loader,
             device=device,
