@@ -313,6 +313,184 @@ Emotions: ['admiration', 'amusement', 'anger', 'annoyance', ...]
 
 ## Model Training
 
+### CPU Smoke Test
+
+Before running full training on GPU, you can validate the complete training pipeline on CPU using a minimal dataset. This smoke test confirms that:
+- Model initialization works correctly
+- Training loop executes without errors
+- All required output files are created (checkpoints, predictions, metrics)
+- Directory creation safeguards work properly
+
+#### Running the Smoke Test
+
+```bash
+# Ensure virtual environment is activated
+source venv/bin/activate
+
+# Run minimal training on CPU (1 epoch, 50 train samples, 25 eval samples)
+python -m src.training.train \
+  --model distilbert-base \
+  --epochs 1 \
+  --batch-size 4 \
+  --no-wandb \
+  --max-train-samples 50 \
+  --max-eval-samples 25 \
+  --output-dir artifacts/models
+```
+
+**Expected runtime:** ~30-60 seconds on modern CPU
+
+**What this does:**
+1. Downloads DistilBERT model and GoEmotions dataset (first run only)
+2. Trains for 1 epoch on 50 training samples
+3. Validates on 25 samples after training
+4. Evaluates on 25 test samples
+5. Saves checkpoint, predictions, and metrics to artifacts/
+
+#### Expected Outputs
+
+The smoke test creates the following directory structure:
+
+```
+artifacts/
+├── models/
+│   └── distilbert-base-YYYYMMDD-HHMMSS/
+│       ├── config.json              # Model configuration
+│       ├── pytorch_model.bin         # Model weights (~260MB for DistilBERT)
+│       ├── tokenizer_config.json     # Tokenizer configuration
+│       ├── vocab.txt                 # Vocabulary file
+│       ├── special_tokens_map.json   # Special token mappings
+│       └── metrics.json              # Training and evaluation metrics
+├── predictions/
+│   ├── val_epoch1_predictions_distilbert-base_YYYYMMDD-HHMMSS.csv
+│   └── test_predictions_distilbert-base_YYYYMMDD-HHMMSS.csv
+└── stats/
+    └── per_class_metrics_distilbert-base_YYYYMMDD-HHMMSS.csv
+```
+
+**Prediction CSV format:**
+Each predictions CSV contains:
+- `text` - Original input text
+- `true_labels` - Ground truth emotion labels (comma-separated)
+- `pred_labels` - Predicted emotion labels (comma-separated, using threshold=0.5)
+- 28 probability columns (one per emotion) - Raw model output probabilities [0.0-1.0]
+
+Example row:
+```csv
+text,true_labels,pred_labels,admiration,amusement,anger,...
+"This is amazing!",admiration,admiration|excitement,0.89,0.12,0.03,...
+```
+
+**Per-class metrics CSV format:**
+Contains detailed metrics for each of the 28 emotions:
+- `emotion` - Emotion label name
+- `f1` - F1 score
+- `precision` - Precision score
+- `recall` - Recall score
+- `support` - Number of true positive samples in test set
+- `tp`, `fp`, `fn`, `tn` - Confusion matrix counts
+
+Example row:
+```csv
+emotion,f1,precision,recall,support,tp,fp,fn,tn
+admiration,0.75,0.80,0.71,15,10,2,5,8
+```
+
+#### Verifying Success
+
+Check that all expected files were created:
+
+```bash
+# Verify checkpoint directory exists
+ls -lh artifacts/models/
+
+# Verify prediction CSVs exist
+ls -lh artifacts/predictions/
+
+# Verify metrics CSV exists
+ls -lh artifacts/stats/
+
+# Count rows in validation predictions (should be 25 + 1 header)
+wc -l artifacts/predictions/val_epoch1_predictions_*.csv
+
+# Count rows in test predictions (should be 25 + 1 header)
+wc -l artifacts/predictions/test_predictions_*.csv
+
+# Count rows in per-class metrics (should be 28 + 1 header)
+wc -l artifacts/stats/per_class_metrics_*.csv
+```
+
+**Expected output:**
+```bash
+# Validation predictions: 26 lines (25 samples + header)
+26 artifacts/predictions/val_epoch1_predictions_distilbert-base_20251211-132958.csv
+
+# Test predictions: 26 lines (25 samples + header)
+26 artifacts/predictions/test_predictions_distilbert-base_20251211-133002.csv
+
+# Per-class metrics: 29 lines (28 emotions + header)
+29 artifacts/stats/per_class_metrics_distilbert-base_20251211-133002.csv
+```
+
+#### Troubleshooting
+
+**Issue: "CUDA out of memory" on CPU-only machine**
+
+This should not happen with the smoke test settings. If it does:
+```bash
+# Reduce batch size further
+python -m src.training.train --model distilbert-base --epochs 1 --batch-size 2 --no-wandb --max-train-samples 20 --max-eval-samples 10
+```
+
+**Issue: "FileNotFoundError: [Errno 2] No such file or directory: 'artifacts/'"**
+
+The training script creates all necessary directories automatically via `mkdir(parents=True, exist_ok=True)`. If this fails, you may have permission issues:
+```bash
+# Create directories manually
+mkdir -p artifacts/models artifacts/predictions artifacts/stats
+
+# Verify permissions
+ls -ld artifacts/
+```
+
+**Issue: Smoke test passes but validation/test predictions CSVs are missing**
+
+This indicates the dataset does not have the `texts` attribute. Verify GoEmotions dataset is properly loaded:
+```python
+from src.data.load_dataset import load_go_emotions
+dataset = load_go_emotions()
+print(hasattr(dataset['validation'], 'texts'))  # Should be True
+```
+
+**Issue: Training completes but checkpoint is missing**
+
+The checkpoint is saved to a timestamped subdirectory. Check the full path:
+```bash
+# Find the checkpoint directory
+find artifacts/models -name "distilbert-base-*" -type d
+
+# Verify checkpoint files exist
+ls artifacts/models/distilbert-base-*/
+```
+
+**Issue: ImportError or ModuleNotFoundError**
+
+Ensure you're in the project root and virtual environment is activated:
+```bash
+# Navigate to project root
+cd /path/to/Final_Project
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Verify Python is using venv
+which python
+# Should show: /path/to/Final_Project/venv/bin/python
+
+# Run smoke test again
+python -m src.training.train --model distilbert-base --epochs 1 --batch-size 4 --no-wandb --max-train-samples 50 --max-eval-samples 25
+```
+
 ### Training Environment Options
 
 #### Option 1: Google Colab (Recommended for Free GPU)
