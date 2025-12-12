@@ -122,16 +122,16 @@ source "$VENV_DIR/bin/activate"
 
 # Install pip if needed
 if [ "${NEED_PIP_INSTALL:-false}" = "true" ]; then
-    log_info "Installing pip via get-pip.py..."
+    log_info "Installing pip and setuptools via get-pip.py..."
     curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
     $PYTHON_CMD /tmp/get-pip.py --quiet
     rm -f /tmp/get-pip.py
-    log_info "Pip installed successfully"
+    log_info "Pip and setuptools installed successfully"
 fi
 
-# Upgrade pip
-log_info "Upgrading pip..."
-pip install --upgrade pip --quiet
+# Upgrade pip and install essential build tools
+log_info "Upgrading pip and installing build tools..."
+pip install --upgrade pip setuptools wheel --quiet
 
 # Install dependencies
 if [ -f requirements.txt ]; then
