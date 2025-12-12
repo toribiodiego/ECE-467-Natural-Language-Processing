@@ -90,15 +90,20 @@ from datasets import load_dataset
 import sys
 import os
 
-# Suppress progress bars
+# Suppress all progress bars and logging
 os.environ['HF_DATASETS_DISABLE_PROGRESS_BARS'] = '1'
+os.environ['HF_HUB_DISABLE_PROGRESS_BARS'] = '1'
+
+# Suppress datasets logging
+import logging
+logging.getLogger('datasets').setLevel(logging.ERROR)
 
 try:
     dataset = load_dataset('google-research-datasets/go_emotions', 'simplified')
     print('  Dataset cached successfully')
 except Exception as e:
     print(f'  Warning: Could not download dataset: {e}', file=sys.stderr)
-" 2>&1
+" 2>&1 | grep -v "README.md" | grep -v ".parquet" | grep -v "Generating"
 
 echo ""
 echo "Setup complete!"
