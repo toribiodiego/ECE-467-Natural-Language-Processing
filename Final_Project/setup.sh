@@ -56,35 +56,28 @@ fi
 # Install dependencies with progress bar
 echo "Installing dependencies..."
 if [ -f requirements.txt ]; then
-    # Count total packages to install
-    TOTAL=$(grep -cE "^[a-zA-Z]" requirements.txt)
+    # Simple spinner while installing (since accurate progress is hard to track)
+    pip install -r requirements.txt > /tmp/pip_install.log 2>&1 &
+    PIP_PID=$!
 
-    # Install with progress tracking
-    pip install -r requirements.txt 2>&1 | \
-    python3 -c "
-import sys
-import re
+    # Show spinner while pip is running
+    spin='-\|/'
+    i=0
+    while kill -0 $PIP_PID 2>/dev/null; do
+        i=$(( (i+1) %4 ))
+        printf "\r  Installing packages... ${spin:$i:1}"
+        sleep 0.1
+    done
 
-total = $TOTAL
-current = 0
-last_percent = -1
-
-for line in sys.stdin:
-    if 'Successfully installed' in line:
-        current = total
-    elif 'Collecting' in line or 'Downloading' in line:
-        current += 1
-        if current > total:
-            current = total
-
-    percent = int((current / total) * 100)
-    if percent != last_percent and percent <= 100:
-        bars = int(percent / 2)
-        print(f'\r  [{'=' * bars}{' ' * (50 - bars)}] {percent}%', end='', flush=True)
-        last_percent = percent
-
-print()  # New line at end
-"
+    # Wait for pip to finish and check exit status
+    wait $PIP_PID
+    if [ $? -eq 0 ]; then
+        printf "\r  Installing packages... Done!\n"
+    else
+        printf "\r  Installing packages... Failed!\n"
+        cat /tmp/pip_install.log
+        exit 1
+    fi
 else
     echo "Error: requirements.txt not found"
     exit 1
