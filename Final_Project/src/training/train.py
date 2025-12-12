@@ -213,7 +213,7 @@ def parse_args() -> argparse.Namespace:
     wandb_group.add_argument(
         '--wandb-project',
         type=str,
-        default='goemotions-emotion-classification',
+        default='GoEmotions_Classification',
         help='W&B project name'
     )
     wandb_group.add_argument(
