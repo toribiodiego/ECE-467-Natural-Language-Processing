@@ -88,12 +88,17 @@ echo "Downloading GoEmotions dataset..."
 python -c "
 from datasets import load_dataset
 import sys
+import os
+
+# Suppress progress bars
+os.environ['HF_DATASETS_DISABLE_PROGRESS_BARS'] = '1'
+
 try:
     dataset = load_dataset('google-research-datasets/go_emotions', 'simplified')
-    print('  Dataset downloaded and cached successfully')
+    print('  Dataset cached successfully')
 except Exception as e:
     print(f'  Warning: Could not download dataset: {e}', file=sys.stderr)
-" 2>&1 | grep -v "^Downloading" | grep -v "^Generating"
+" 2>&1
 
 echo ""
 echo "Setup complete!"
