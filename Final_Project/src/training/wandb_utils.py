@@ -56,8 +56,11 @@ def init_wandb(
     # Generate run name if not provided
     run_name = args.run_name
     if run_name is None:
-        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        run_name = f"{model_name}-{timestamp}"
+        # Simplify model name: distilbert-base -> distilbert, keep size variants
+        display_model = model_name.replace('-base', '') if 'distilbert' in model_name.lower() else model_name
+        # Use MM-DD-YYYY format for clarity
+        timestamp = datetime.now().strftime("%m-%d-%Y-%H%M%S")
+        run_name = f"{display_model}-{timestamp}"
 
     # Initialize W&B
     logger.info(f"Initializing W&B run: {run_name}")
@@ -143,6 +146,8 @@ def log_training_metrics(
     learning_rate: float,
     epoch_time: float,
     samples_per_sec: float,
+    val_f1_micro: Optional[float] = None,
+    val_f1_macro: Optional[float] = None,
     grad_norm: Optional[float] = None,
     train_auc: Optional[float] = None,
     use_wandb: bool = True
@@ -159,6 +164,8 @@ def log_training_metrics(
         learning_rate: Current learning rate
         epoch_time: Time taken for epoch in seconds
         samples_per_sec: Training throughput
+        val_f1_micro: Validation F1 micro score (optional)
+        val_f1_macro: Validation F1 macro score (optional)
         grad_norm: Gradient norm (optional)
         train_auc: Training AUC score (optional, expensive to compute)
         use_wandb: Whether to log to W&B
@@ -166,21 +173,28 @@ def log_training_metrics(
     if not use_wandb or not WANDB_AVAILABLE or wandb.run is None:
         return
 
+    # Use alphabetically ordered prefixes: A_train, B_val, C_test
     metrics = {
-        'train/loss': train_loss,
-        'train/loss_std': train_loss_std,
-        'val/loss': val_loss,
-        'val/auc': val_auc,
-        'train/learning_rate': learning_rate,
-        'train/epoch_time': epoch_time,
-        'train/samples_per_sec': samples_per_sec,
+        'A_train/loss': train_loss,
+        'A_train/loss_std': train_loss_std,
+        'A_train/learning_rate': learning_rate,
+        'A_train/epoch_time': epoch_time,
+        'A_train/samples_per_sec': samples_per_sec,
+        'B_val/loss': val_loss,
+        'B_val/auc': val_auc,
     }
 
+    if val_f1_micro is not None:
+        metrics['B_val/f1_micro'] = val_f1_micro
+
+    if val_f1_macro is not None:
+        metrics['B_val/f1_macro'] = val_f1_macro
+
     if grad_norm is not None:
-        metrics['train/grad_norm'] = grad_norm
+        metrics['A_train/grad_norm'] = grad_norm
 
     if train_auc is not None:
-        metrics['train/auc'] = train_auc
+        metrics['A_train/auc'] = train_auc
 
     wandb.log(metrics, step=epoch)
 
@@ -196,6 +210,10 @@ def log_evaluation_metrics(
     """
     Log final evaluation metrics to W&B.
 
+    High-level metrics (AUC, macro F1/precision/recall) are logged as charts for
+    visual comparison across runs. Per-class metrics and metadata are saved to
+    run summary for table-based filtering without creating charts.
+
     Args:
         test_results: Dictionary with evaluation results from evaluate_with_threshold()
         label_names: List of emotion label names
@@ -207,35 +225,40 @@ def log_evaluation_metrics(
     if not use_wandb or not WANDB_AVAILABLE or wandb.run is None:
         return
 
-    # Overall metrics
-    metrics = {
-        'test/auc_micro': test_results.get('auc_micro', 0.0),
-        'test/auc_macro': test_results.get('auc_macro', 0.0),
-        'test/f1_macro': test_results.get('f1_macro', 0.0),
-        'test/f1_micro': test_results.get('f1_micro', 0.0),
-        'test/precision_macro': test_results.get('precision_macro', 0.0),
-        'test/precision_micro': test_results.get('precision_micro', 0.0),
-        'test/recall_macro': test_results.get('recall_macro', 0.0),
-        'test/recall_micro': test_results.get('recall_micro', 0.0),
-        'total_training_time': total_training_time,
+    # High-level test metrics - log as charts for visual comparison
+    # Use C_test prefix to ensure test metrics appear after A_train and B_val
+    chart_metrics = {
+        'C_test/auc_micro': test_results.get('auc_micro', 0.0),
+        'C_test/auc_macro': test_results.get('auc_macro', 0.0),
+        'C_test/f1_macro': test_results.get('f1_macro', 0.0),
+        'C_test/f1_micro': test_results.get('f1_micro', 0.0),
+        'C_test/precision_macro': test_results.get('precision_macro', 0.0),
+        'C_test/recall_macro': test_results.get('recall_macro', 0.0),
+    }
+    wandb.log(chart_metrics)
+
+    # Metadata and per-class metrics - save to summary (table view, no charts)
+    summary_metrics = {
         'best_epoch': best_epoch,
         'final_epoch': final_epoch,
+        'total_training_time': total_training_time,
     }
 
-    # Per-class metrics
+    # Per-class metrics - accessible in runs table for filtering/sorting
     if 'per_class_f1' in test_results:
         for emotion in label_names:
-            metrics[f'test/f1_{emotion}'] = test_results['per_class_f1'].get(emotion, 0.0)
-            metrics[f'test/precision_{emotion}'] = test_results['per_class_precision'].get(emotion, 0.0)
-            metrics[f'test/recall_{emotion}'] = test_results['per_class_recall'].get(emotion, 0.0)
+            summary_metrics[f'test/f1_{emotion}'] = test_results['per_class_f1'].get(emotion, 0.0)
+            summary_metrics[f'test/precision_{emotion}'] = test_results['per_class_precision'].get(emotion, 0.0)
+            summary_metrics[f'test/recall_{emotion}'] = test_results['per_class_recall'].get(emotion, 0.0)
 
-    # Support and confusion metrics
+    # Support values - dataset properties, useful for filtering runs
     if 'confusion_summary' in test_results:
         for emotion in label_names:
             conf = test_results['confusion_summary'].get(emotion, {})
-            metrics[f'test/support_{emotion}'] = conf.get('support', 0)
+            summary_metrics[f'test/support_{emotion}'] = conf.get('support', 0)
 
-    wandb.log(metrics)
+    wandb.summary.update(summary_metrics)
+    logger.info(f"Logged {len(chart_metrics)} test metrics to charts, {len(summary_metrics)} to summary")
 
 
 def log_artifact_checkpoint(

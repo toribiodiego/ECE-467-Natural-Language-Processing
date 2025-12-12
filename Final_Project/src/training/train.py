@@ -658,6 +658,8 @@ def train_model(
         'train_loss': [],
         'val_loss': [],
         'val_auc': [],
+        'val_f1_micro': [],
+        'val_f1_macro': [],
         'learning_rates': [],
         'epoch_times': []
     }
@@ -749,7 +751,7 @@ def train_model(
         # Calculate average validation loss
         avg_val_loss = val_loss / val_steps
 
-        # Compute validation AUC
+        # Compute validation AUC and F1
         val_logits_all = torch.cat(val_logits, dim=0).numpy()
         val_labels_all = torch.cat(val_labels, dim=0).numpy()
         val_probs = 1 / (1 + np.exp(-val_logits_all))
@@ -758,6 +760,15 @@ def train_model(
             val_auc = roc_auc_score(val_labels_all, val_probs, average='micro')
         except ValueError:
             val_auc = 0.0
+
+        # Compute validation F1 scores (using threshold for predictions)
+        val_preds = (val_probs >= args.threshold).astype(int)
+        try:
+            val_f1_micro = f1_score(val_labels_all, val_preds, average='micro', zero_division=0)
+            val_f1_macro = f1_score(val_labels_all, val_preds, average='macro', zero_division=0)
+        except ValueError:
+            val_f1_micro = 0.0
+            val_f1_macro = 0.0
 
         # Save validation predictions if texts are available
         if hasattr(val_loader.dataset, 'texts') and val_loader.dataset.texts is not None:
@@ -813,6 +824,8 @@ def train_model(
         history['train_loss'].append(avg_train_loss)
         history['val_loss'].append(avg_val_loss)
         history['val_auc'].append(val_auc)
+        history['val_f1_micro'].append(val_f1_micro)
+        history['val_f1_macro'].append(val_f1_macro)
         history['learning_rates'].append(current_lr)
         history['epoch_times'].append(epoch_time)
 
@@ -828,6 +841,8 @@ def train_model(
             train_loss_std=train_loss_std,
             val_loss=avg_val_loss,
             val_auc=val_auc,
+            val_f1_micro=val_f1_micro,
+            val_f1_macro=val_f1_macro,
             learning_rate=current_lr,
             epoch_time=epoch_time,
             samples_per_sec=samples_per_sec,
