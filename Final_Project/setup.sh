@@ -92,9 +92,14 @@ fi
 
 if [ "${SKIP_VENV_CREATION:-false}" != "true" ]; then
     log_info "Creating virtual environment in $VENV_DIR..."
-    $PYTHON_CMD -m venv "$VENV_DIR"
 
-    if [ $? -ne 0 ]; then
+    # Temporarily disable exit-on-error for venv creation
+    set +e
+    $PYTHON_CMD -m venv "$VENV_DIR" 2>/dev/null
+    VENV_STATUS=$?
+    set -e
+
+    if [ $VENV_STATUS -ne 0 ]; then
         log_warn "Standard venv creation failed, trying without pip (common in Colab)..."
         $PYTHON_CMD -m venv "$VENV_DIR" --without-pip
 
