@@ -34,11 +34,11 @@ This directory contains comprehensive documentation for the GoEmotions emotion c
   - Threshold selection results
   - W&B run references and checkpoint locations
 
-- **`w_and_b_guide.md`** - Weights & Biases setup and usage
-  - W&B account setup and authentication
-  - Logging requirements (metrics, artifacts, metadata)
-  - Artifact management and retrieval
-  - Troubleshooting W&B issues
+- **`wandb/`** - Weights & Biases integration documentation
+  - **`README.md`** - Quick start and overview
+  - **`file_organization.md`** - Files tab organization and structure
+  - **`downloading_files.md`** - Download files from W&B (UI and API)
+  - **`metrics_guide.md`** - Metrics logging and interpretation
 
 ### Ablation Studies
 
