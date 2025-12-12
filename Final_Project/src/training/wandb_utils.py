@@ -173,28 +173,27 @@ def log_training_metrics(
     if not use_wandb or not WANDB_AVAILABLE or wandb.run is None:
         return
 
-    # Use alphabetically ordered prefixes: A_train, B_val, C_test
     metrics = {
-        'A_train/loss': train_loss,
-        'A_train/loss_std': train_loss_std,
-        'A_train/learning_rate': learning_rate,
-        'A_train/epoch_time': epoch_time,
-        'A_train/samples_per_sec': samples_per_sec,
-        'B_val/loss': val_loss,
-        'B_val/auc': val_auc,
+        'train/loss': train_loss,
+        'train/loss_std': train_loss_std,
+        'train/learning_rate': learning_rate,
+        'train/epoch_time': epoch_time,
+        'train/samples_per_sec': samples_per_sec,
+        'val/loss': val_loss,
+        'val/auc': val_auc,
     }
 
     if val_f1_micro is not None:
-        metrics['B_val/f1_micro'] = val_f1_micro
+        metrics['val/f1_micro'] = val_f1_micro
 
     if val_f1_macro is not None:
-        metrics['B_val/f1_macro'] = val_f1_macro
+        metrics['val/f1_macro'] = val_f1_macro
 
     if grad_norm is not None:
-        metrics['A_train/grad_norm'] = grad_norm
+        metrics['train/grad_norm'] = grad_norm
 
     if train_auc is not None:
-        metrics['A_train/auc'] = train_auc
+        metrics['train/auc'] = train_auc
 
     wandb.log(metrics, step=epoch)
 
@@ -226,14 +225,13 @@ def log_evaluation_metrics(
         return
 
     # High-level test metrics - log as charts for visual comparison
-    # Use C_test prefix to ensure test metrics appear after A_train and B_val
     chart_metrics = {
-        'C_test/auc_micro': test_results.get('auc_micro', 0.0),
-        'C_test/auc_macro': test_results.get('auc_macro', 0.0),
-        'C_test/f1_macro': test_results.get('f1_macro', 0.0),
-        'C_test/f1_micro': test_results.get('f1_micro', 0.0),
-        'C_test/precision_macro': test_results.get('precision_macro', 0.0),
-        'C_test/recall_macro': test_results.get('recall_macro', 0.0),
+        'test/auc_micro': test_results.get('auc_micro', 0.0),
+        'test/auc_macro': test_results.get('auc_macro', 0.0),
+        'test/f1_macro': test_results.get('f1_macro', 0.0),
+        'test/f1_micro': test_results.get('f1_micro', 0.0),
+        'test/precision_macro': test_results.get('precision_macro', 0.0),
+        'test/recall_macro': test_results.get('recall_macro', 0.0),
     }
     wandb.log(chart_metrics)
 
@@ -308,6 +306,14 @@ def log_artifact_checkpoint(
 
     artifact.add_dir(checkpoint_dir)
     wandb.log_artifact(artifact)
+
+    # Also save checkpoint directory to Files tab for easier browsing
+    # Save the entire directory to maintain structure
+    checkpoint_path = Path(checkpoint_dir)
+    for file_path in checkpoint_path.glob('*'):
+        if file_path.is_file():
+            wandb.save(str(file_path), base_path=str(checkpoint_path.parent), policy='now')
+
     logger.info(f"Checkpoint artifact uploaded: {artifact.name}")
 
 
@@ -345,6 +351,11 @@ def log_artifact_predictions(
 
     artifact.add_file(predictions_path)
     wandb.log_artifact(artifact)
+
+    # Also save to Files tab for easier browsing and remote retrieval
+    # base_path preserves directory structure (e.g., artifacts/predictions/file.csv)
+    wandb.save(predictions_path, base_path=str(Path(predictions_path).parent.parent), policy='now')
+
     logger.info(f"Predictions artifact uploaded: {artifact.name}")
 
 
@@ -378,6 +389,11 @@ def log_artifact_metrics(
 
     artifact.add_file(metrics_path)
     wandb.log_artifact(artifact)
+
+    # Also save to Files tab for easier browsing and remote retrieval
+    # base_path preserves directory structure (e.g., artifacts/stats/file.csv)
+    wandb.save(metrics_path, base_path=str(Path(metrics_path).parent.parent), policy='now')
+
     logger.info(f"Metrics artifact uploaded: {artifact.name}")
 
 
