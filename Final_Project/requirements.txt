@@ -11,8 +11,8 @@
 # see: https://pytorch.org/get-started/locally/
 
 # Core ML/NLP Libraries
-datasets==2.14.5           # HuggingFace datasets for loading GoEmotions
-transformers==4.30.2       # HuggingFace transformers (BERT, RoBERTa, DistilBERT)
+datasets>=2.14.5           # HuggingFace datasets for loading GoEmotions
+transformers>=4.30.2       # HuggingFace transformers (BERT, RoBERTa, DistilBERT)
 torch>=2.0.1               # PyTorch for model training (flexible version for Python 3.12+)
 torchvision>=0.15.2        # PyTorch vision utilities
 torchaudio>=2.0.2          # PyTorch audio (dependency)
@@ -51,7 +51,7 @@ flake8>=6.0.0              # Linter
 pytest>=7.4.0              # Testing framework
 
 # Additional Dependencies
-tokenizers>=0.13.3         # Fast tokenizers for transformers
+# tokenizers is installed automatically as a dependency of transformers
 huggingface-hub>=0.16.4    # HuggingFace Hub utilities
 safetensors>=0.3.1         # Safe tensor serialization
 psutil>=5.9.5              # System and process utilities
