@@ -251,8 +251,9 @@ def create_dataloaders(
 
         def tokenize_split(split_data, split_name: str):
             """Helper to tokenize a dataset split."""
-            texts = split_data['text']
-            labels = split_data['labels']
+            # Convert Dataset columns to lists
+            texts = list(split_data['text'])
+            labels = list(split_data['labels'])
 
             # Tokenize texts
             encodings = tokenizer(
