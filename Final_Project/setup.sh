@@ -13,186 +13,82 @@
 #   - pip
 
 set -e  # Exit on error
-set -u  # Exit on undefined variable
 
-# Color output for better readability
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# Helper functions
-log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Load environment variables from .env file
-if [ -f .env ]; then
-    log_info "Loading environment variables from .env"
-    export $(grep -v '^#' .env | xargs)
-else
-    log_warn ".env file not found. Creating from .env.example"
-    if [ -f .env.example ]; then
-        cp .env.example .env
-        export $(grep -v '^#' .env | xargs)
-        log_info "Created .env from template. You can customize it if needed."
-    else
-        log_error ".env.example not found. Cannot proceed."
-        exit 1
-    fi
-fi
-
-# Set defaults if not specified in .env
+# Set defaults
 VENV_DIR=${VENV_DIR:-venv}
 PYTHON_CMD=${PYTHON_CMD:-python3}
 
-log_info "Starting environment setup for GoEmotions Project"
-log_info "Virtual environment directory: $VENV_DIR"
-
 # Check Python version
-log_info "Checking Python version..."
-if ! command -v $PYTHON_CMD &> /dev/null; then
-    log_error "Python 3 not found. Please install Python 3.8 or higher."
-    exit 1
-fi
-
 PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | awk '{print $2}')
-log_info "Found Python $PYTHON_VERSION"
-
-# Check if version is >= 3.8
 MAJOR_VERSION=$(echo $PYTHON_VERSION | cut -d. -f1)
 MINOR_VERSION=$(echo $PYTHON_VERSION | cut -d. -f2)
 
 if [ "$MAJOR_VERSION" -lt 3 ] || ([ "$MAJOR_VERSION" -eq 3 ] && [ "$MINOR_VERSION" -lt 8 ]); then
-    log_error "Python 3.8 or higher is required. Found: $PYTHON_VERSION"
+    echo "Error: Python 3.8 or higher is required. Found: $PYTHON_VERSION"
     exit 1
 fi
 
 # Create virtual environment
+echo "Creating virtual environment..."
 if [ -d "$VENV_DIR" ]; then
-    log_warn "Virtual environment already exists at $VENV_DIR"
-    read -p "Do you want to recreate it? (y/N) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        log_info "Removing existing virtual environment..."
-        rm -rf "$VENV_DIR"
-    else
-        log_info "Skipping virtual environment creation"
-        SKIP_VENV_CREATION=true
-    fi
+    rm -rf "$VENV_DIR"
 fi
 
-if [ "${SKIP_VENV_CREATION:-false}" != "true" ]; then
-    log_info "Creating virtual environment in $VENV_DIR..."
+# Temporarily disable exit-on-error for venv creation
+set +e
+$PYTHON_CMD -m venv "$VENV_DIR" 2>/dev/null
+VENV_STATUS=$?
+set -e
 
-    # Temporarily disable exit-on-error for venv creation
-    set +e
-    $PYTHON_CMD -m venv "$VENV_DIR" 2>/dev/null
-    VENV_STATUS=$?
-    set -e
-
-    if [ $VENV_STATUS -ne 0 ]; then
-        log_warn "Standard venv creation failed, trying without pip (common in Colab)..."
-        $PYTHON_CMD -m venv "$VENV_DIR" --without-pip
-
-        if [ $? -ne 0 ]; then
-            log_error "Failed to create virtual environment"
-            exit 1
-        fi
-
-        log_info "Virtual environment created without pip"
-        NEED_PIP_INSTALL=true
-    else
-        log_info "Virtual environment created successfully"
-        NEED_PIP_INSTALL=false
-    fi
-fi
-
-# Activate virtual environment
-log_info "Activating virtual environment..."
-source "$VENV_DIR/bin/activate"
-
-# Install pip if needed
-if [ "${NEED_PIP_INSTALL:-false}" = "true" ]; then
-    log_info "Installing pip and setuptools via get-pip.py..."
+if [ $VENV_STATUS -ne 0 ]; then
+    # Fallback for Colab environments
+    $PYTHON_CMD -m venv "$VENV_DIR" --without-pip
+    source "$VENV_DIR/bin/activate"
     curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
     $PYTHON_CMD /tmp/get-pip.py --quiet
     rm -f /tmp/get-pip.py
-    log_info "Pip and setuptools installed successfully"
+    pip install --upgrade pip setuptools wheel --quiet
+else
+    source "$VENV_DIR/bin/activate"
+    pip install --upgrade pip setuptools wheel --quiet
 fi
 
-# Upgrade pip and install essential build tools
-log_info "Upgrading pip and installing build tools..."
-pip install --upgrade pip setuptools wheel --quiet
-
-# Install dependencies
+# Install dependencies with progress indication
+echo "Installing dependencies..."
 if [ -f requirements.txt ]; then
-    log_info "Installing dependencies from requirements.txt..."
-    log_info "This may take several minutes..."
-    pip install -r requirements.txt --quiet
-
-    if [ $? -ne 0 ]; then
-        log_error "Failed to install dependencies"
-        exit 1
-    fi
-
-    log_info "Dependencies installed successfully"
+    pip install -r requirements.txt --progress-bar off 2>&1 | grep -E "(Collecting|Installing|Successfully)" | sed 's/^/  /'
 else
-    log_warn "requirements.txt not found. Skipping dependency installation."
+    echo "Error: requirements.txt not found"
+    exit 1
 fi
 
-# Validate installation
-log_info "Validating installation..."
+# Download dataset
+echo "Downloading GoEmotions dataset..."
+python -c "
+from datasets import load_dataset
+import sys
+try:
+    dataset = load_dataset('google-research-datasets/go_emotions', 'simplified')
+    print('  Dataset downloaded and cached successfully')
+except Exception as e:
+    print(f'  Warning: Could not download dataset: {e}', file=sys.stderr)
+" 2>&1 | grep -v "^Downloading" | grep -v "^Generating"
 
-# Check critical packages
-REQUIRED_PACKAGES=("datasets" "transformers" "torch" "sklearn" "pandas" "matplotlib" "numpy")
-MISSING_PACKAGES=()
+echo ""
+echo "Setup complete!"
+echo ""
 
-for package in "${REQUIRED_PACKAGES[@]}"; do
-    if ! python -c "import ${package//-/_}" 2>/dev/null; then
-        MISSING_PACKAGES+=("$package")
-    fi
-done
+# Check GPU availability
+python -c "
+import torch
+print(f'GPU available: {torch.cuda.is_available()}')
+if torch.cuda.is_available():
+    print(f'GPU count: {torch.cuda.device_count()}')
+    print(f'GPU name: {torch.cuda.get_device_name(0)}')
+else:
+    print('GPU count: 0')
+    print('GPU name: CPU only')
+"
 
-if [ ${#MISSING_PACKAGES[@]} -eq 0 ]; then
-    log_info "All required packages installed successfully ✓"
-else
-    log_warn "Some packages could not be validated: ${MISSING_PACKAGES[*]}"
-    log_warn "This might be expected if requirements.txt doesn't exist yet"
-fi
-
-# Print summary
-echo
-log_info "=========================================="
-log_info "Setup completed successfully!"
-log_info "=========================================="
-echo
-echo "To activate the virtual environment:"
-echo "  source $VENV_DIR/bin/activate"
-echo
-echo "To deactivate:"
-echo "  deactivate"
-echo
-echo "To run analysis scripts:"
-echo "  source $VENV_DIR/bin/activate"
-echo "  python -m src.data.multilabel_stats"
-echo
-
-# Create activation helper script
-cat > activate.sh << 'ACTIVATION_SCRIPT'
-#!/usr/bin/env bash
-# Quick activation helper
-source venv/bin/activate
-echo "Virtual environment activated!"
-ACTIVATION_SCRIPT
-
-chmod +x activate.sh
-log_info "Created activate.sh helper script for quick activation"
+echo ""
+echo "Virtual environment is active. To deactivate, run: deactivate"
