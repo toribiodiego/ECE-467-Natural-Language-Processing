@@ -18,6 +18,14 @@ docs/
 
 How-to instructions for running experiments and reproducing results.
 
+- **`guides/gpu_training.md`** - GPU training setup and execution
+  - Remote GPU instance setup
+  - Repository clone and configuration
+  - W&B authentication with set -a/set +a
+  - Training configurations for different models
+  - Background execution and monitoring
+  - Troubleshooting common GPU issues
+
 - **`guides/replication.md`** - Complete replication guide
   - Environment setup and dependencies
   - Running data analysis scripts
