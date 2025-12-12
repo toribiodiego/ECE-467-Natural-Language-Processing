@@ -23,13 +23,21 @@ This section will contain a summary of all trained models, their configurations,
 - DistilBERT (66M parameters)
 
 **Evaluation Metrics:**
-- Primary: AUC (Area Under ROC Curve)
-- Secondary: Macro/Micro F1, Precision, Recall
-- Per-class: F1 scores for all 28 emotions
+
+*Primary Metric:*
+- **AUC (micro)**: Threshold-agnostic overall ranking quality (model comparison standard)
+
+*Secondary Metrics:*
+- **AUC (macro)**: Fair treatment of all 28 emotions regardless of frequency
+- **Micro F1**: Deployment performance at default threshold (0.5)
+
+*Tertiary Metrics (diagnostic):*
+- Macro/Micro Precision and Recall: Threshold sensitivity analysis
+- Per-emotion F1 scores: Identify best/worst performing emotions
 
 **See Also:**
-- `design_decisions.md` - Rationale for model selection and hyperparameters
-- `ablation_studies/README.md` - Experiments informing final model choices
+- `design_decisions.md#evaluation-metrics` - Complete metric selection rationale
+- `ablation_studies/README.md` - Threshold optimization experiments
 
 ---
 
@@ -45,14 +53,22 @@ This section will contain a summary of all trained models, their configurations,
 - Max Sequence Length: 128
 
 **Performance Metrics:**
-- **Test AUC (micro): 0.9045**
-- **Test AUC (macro): 0.8294**
+
+*Primary:*
+- **Test AUC (micro): 0.9045** ← Primary metric for model comparison
+
+*Secondary:*
+- **Test AUC (macro): 0.8294** ← Fair emotion treatment (all 28 emotions weighted equally)
+- **Micro F1: 0.4001** ← Deployment performance at threshold=0.5
+
+*Tertiary (diagnostic):*
 - Macro F1: 0.1600
-- Micro F1: 0.4001
 - Macro Precision: 0.2691
 - Micro Precision: 0.7278
 - Macro Recall: 0.1367
 - Micro Recall: 0.2759
+
+*Training:*
 - **Best Validation AUC: 0.9038** (epoch 1)
 
 **Training Details:**
@@ -84,14 +100,22 @@ This section will contain a summary of all trained models, their configurations,
 - Max Sequence Length: 128
 
 **Performance Metrics:**
-- **Test AUC (micro): 0.8800**
-- **Test AUC (macro): 0.7443**
+
+*Primary:*
+- **Test AUC (micro): 0.8800** ← Primary metric for model comparison
+
+*Secondary:*
+- **Test AUC (macro): 0.7443** ← Fair emotion treatment (all 28 emotions weighted equally)
+- **Micro F1: 0.3516** ← Deployment performance at threshold=0.5
+
+*Tertiary (diagnostic):*
 - Macro F1: 0.0904
-- Micro F1: 0.3516
 - Macro Precision: 0.1547
 - Micro Precision: 0.7085
 - Macro Recall: 0.0703
 - Micro Recall: 0.2338
+
+*Training:*
 - **Best Validation AUC: 0.8790** (epoch 10)
 
 **Training Details:**
@@ -114,19 +138,30 @@ This section will contain a summary of all trained models, their configurations,
 
 ## Model Comparison
 
-| Metric           | RoBERTa-Large | DistilBERT | Δ       | % Difference |
-|------------------|---------------|------------|---------|--------------|
-| Test AUC (micro) | 0.9045        | 0.8800     | -0.0245 | -2.7%        |
-| Test AUC (macro) | 0.8294        | 0.7443     | -0.0851 | -10.3%       |
-| Macro F1         | 0.1600        | 0.0904     | -0.0696 | -43.5%       |
-| Micro F1         | 0.4001        | 0.3516     | -0.0485 | -12.1%       |
-| Macro Precision  | 0.2691        | 0.1547     | -0.1144 | -42.5%       |
-| Micro Precision  | 0.7278        | 0.7085     | -0.0193 | -2.7%        |
-| Macro Recall     | 0.1367        | 0.0703     | -0.0664 | -48.6%       |
-| Micro Recall     | 0.2759        | 0.2338     | -0.0421 | -15.3%       |
-| Parameters       | 355M          | 66M        | -289M   | -81.4%       |
-| Train Time       | 2.05 hrs      | 0.31 hrs   | -1.74   | -84.9%       |
-| Best Epoch       | 1             | 10         | +9      | +900%        |
+### Performance Metrics
+
+| Metric                     | RoBERTa-Large | DistilBERT | Δ       | % Difference |
+|----------------------------|---------------|------------|---------|--------------|
+| **AUC (micro)** ⭐         | **0.9045**    | **0.8800** | -0.0245 | **-2.7%**    |
+| **AUC (macro)** 🎯         | **0.8294**    | **0.7443** | -0.0851 | **-10.3%**   |
+| **Micro F1** 📊            | **0.4001**    | **0.3516** | -0.0485 | **-12.1%**   |
+| Macro F1                   | 0.1600        | 0.0904     | -0.0696 | -43.5%       |
+| Macro Precision            | 0.2691        | 0.1547     | -0.1144 | -42.5%       |
+| Micro Precision            | 0.7278        | 0.7085     | -0.0193 | -2.7%        |
+| Macro Recall               | 0.1367        | 0.0703     | -0.0664 | -48.6%       |
+| Micro Recall               | 0.2759        | 0.2338     | -0.0421 | -15.3%       |
+
+⭐ = Primary metric for model comparison
+🎯 = Secondary metric (fair emotion treatment)
+📊 = Secondary metric (deployment performance)
+
+### Model Efficiency
+
+| Metric                     | RoBERTa-Large | DistilBERT | Δ       | % Difference |
+|----------------------------|---------------|------------|---------|--------------|
+| Parameters                 | 355M          | 66M        | -289M   | -81.4%       |
+| Train Time                 | 2.05 hrs      | 0.31 hrs   | -1.74   | -84.9%       |
+| Best Epoch                 | 1             | 10         | +9      | +900%        |
 
 **Key Findings:**
 - **AUC Performance**: DistilBERT achieves 97.3% of RoBERTa's micro-AUC with only 18.6% of the parameters

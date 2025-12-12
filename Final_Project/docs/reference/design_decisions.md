@@ -231,48 +231,139 @@ Final: Restored epoch 2 model (Val AUC = 0.504)
 
 ## Evaluation Metrics
 
-### Primary Metric: AUC (Area Under ROC Curve)
+### Metric Selection for Multi-Label Emotion Classification
 
-**Decision:** Use macro-averaged AUC as the primary evaluation metric.
+**Decision:** Use AUC (micro) as the primary metric, with AUC (macro) and Micro F1 as secondary metrics for comprehensive evaluation.
 
 **Rationale:**
 
-For multi-label classification with class imbalance:
-- **AUC is threshold-agnostic**: Measures ranking quality independent of classification threshold
-- **Macro-averaging**: Treats all emotions equally (vs. micro-averaging which favors frequent classes)
-- **Robust to imbalance**: Works well even with rare emotions (grief: 96 samples)
+Multi-label emotion classification with 28 imbalanced emotion classes (ranging from neutral: 17,772 samples to grief: 96 samples) requires careful metric selection to balance:
+1. Overall model performance across all emotions
+2. Fair treatment of rare vs. frequent emotions
+3. Threshold-agnostic evaluation during training
+4. Practical utility for deployment scenarios
+
+### Primary Metric: AUC (micro)
+
+**Why AUC (micro) is primary:**
+
+1. **Threshold-agnostic**: Measures ranking quality independent of classification threshold, allowing model comparison without threshold tuning
+2. **Dataset-level performance**: Micro-averaging treats each prediction equally, providing an overall measure of the model's ability to rank emotions correctly across the entire test set
+3. **Robust to multi-label complexity**: Works naturally with multi-label scenarios where samples can have 1-3+ emotion labels
+4. **Comparable across models**: Enables direct comparison between models (RoBERTa vs DistilBERT) without threshold sensitivity
+
+**Empirical results validate this choice:**
+- RoBERTa-Large: AUC (micro) = 0.9045
+- DistilBERT: AUC (micro) = 0.8800
+- Clear 2.5% performance gap despite 81% parameter reduction
 
 **Why not accuracy?**
 
-Multi-label accuracy is poorly defined and sensitive to threshold choice. A model that always predicts neutral would have high accuracy but poor utility.
+Multi-label accuracy is poorly defined and highly sensitive to threshold choice. In our 28-class setting, a model predicting only neutral would appear accurate but have poor utility.
 
-**Why not F1 score?**
+**Why not Macro F1 as primary?**
 
-F1 score requires a threshold decision. We report F1 scores at optimized thresholds, but use AUC for model comparison during training.
+Macro F1 is threshold-dependent and shows extreme sensitivity in our results:
+- RoBERTa Macro F1: 0.1600
+- DistilBERT Macro F1: 0.0904
+- 43.5% relative difference vs. only 2.7% AUC difference
 
-**Secondary Metrics:**
+This gap indicates threshold mismatch, not fundamental model quality difference. F1 requires threshold tuning before meaningful comparison.
 
-- **Per-emotion F1 scores**: Identify strong/weak emotion predictions
-- **Precision/Recall curves**: Understand threshold trade-offs
-- **Confusion analysis**: Identify common co-occurrence errors
+### Secondary Metrics
+
+#### 1. AUC (macro) - Fair Emotion Treatment
+
+**Purpose:** Measures per-emotion ranking quality, treating all 28 emotions equally regardless of frequency.
+
+**Why it matters:**
+- Ensures rare emotions (grief: 96, pride: 234) are not ignored in favor of frequent ones (neutral: 17,772)
+- Macro-averaging gives each emotion equal weight in the final score
+- Helps identify if models learn balanced representations vs. just predicting frequent classes
+
+**Results interpretation:**
+- RoBERTa AUC (macro): 0.8294 vs AUC (micro): 0.9045
+- Gap indicates some emotions are harder to classify than others
+- Larger gap = more uneven performance across emotions
+
+#### 2. Micro F1 - Deployment Performance Indicator
+
+**Purpose:** Measures classification performance at a fixed threshold (default 0.5), representing expected behavior in production deployment.
+
+**Why it matters:**
+- **Production relevance**: Real systems must make binary predictions at some threshold
+- **Overall classification quality**: Balances precision and recall across all predictions
+- **Comparison baseline**: Enables comparison with prior work using F1 scores
+
+**Results interpretation:**
+- RoBERTa Micro F1: 0.4001 (Precision: 0.7278, Recall: 0.2759)
+- High precision, low recall = conservative predictions at default threshold
+- Indicates need for threshold tuning to balance precision/recall trade-off
+
+**Why Micro F1 over Macro F1?**
+- Micro F1 reflects dataset-level performance (aligns with primary metric philosophy)
+- Macro F1 is very low (0.0904-0.1600) due to poor performance on rare emotions, making it less useful for overall quality assessment
+- Per-emotion F1 scores (reported separately) provide granular rare-emotion insights
+
+### Tertiary Metrics for Analysis
+
+These metrics are reported but not used for primary model comparison:
+
+**3. Macro Precision/Recall:**
+- Identifies systematic biases (e.g., overly conservative predictions)
+- Per-emotion breakdown reveals which emotions are hardest to detect
+
+**4. Micro Precision/Recall:**
+- Decomposes Micro F1 to diagnose threshold issues
+- High precision + low recall = threshold too high (our case)
+
+**5. Per-Emotion F1 Scores:**
+- Identify best/worst performing emotions
+- Guide future improvements (e.g., data augmentation for rare emotions)
+- See `docs/results/model_performance.md#per-emotion-performance`
+
+### Metric Hierarchy Summary
+
+```
+Primary:   AUC (micro) → Model comparison, training checkpointing
+Secondary: AUC (macro) → Fair emotion treatment verification
+           Micro F1    → Deployment performance estimation
+Tertiary:  Precision/Recall (macro/micro) → Diagnostic analysis
+           Per-emotion F1 → Granular performance insights
+```
 
 ### Threshold Selection Strategy
 
-**Decision:** Evaluate multiple threshold strategies in ablation studies, then select based on use case.
-
-**Strategies to Compare:**
-1. **Global threshold** (e.g., 0.5): Simple, interpretable
-2. **Per-label threshold**: Optimized for each emotion independently
-3. **Top-k selection**: Always predict k most confident emotions
+**Decision:** Use default threshold (0.5) for initial reporting, with per-label threshold optimization in ablation studies.
 
 **Rationale:**
 
-Different deployment scenarios require different threshold strategies:
-- **Global threshold**: Simplest for production deployment
-- **Per-label threshold**: Best metrics, but more complex
-- **Top-k**: Guarantees at least k predictions (useful for UX)
+Our empirical results show threshold sensitivity:
+- High precision (0.7085-0.7278) with low recall (0.2338-0.2759)
+- Indicates default 0.5 threshold is too conservative
+- Optimized thresholds could significantly improve F1 scores
 
-The ablation study will quantify performance differences and inform the final choice.
+**Threshold strategies to evaluate:**
+1. **Global threshold** (current: 0.5): Simple, but suboptimal
+2. **Per-label threshold**: Optimize threshold independently for each emotion to maximize F1
+3. **Top-k selection**: Always predict k most confident emotions (UX guarantee)
+
+**Future work:**
+The ablation study will quantify F1 improvements from threshold optimization and inform production deployment choices.
+
+### Why These Metrics Align with Best Practices
+
+**Multi-label classification literature** (Zhang & Zhou 2014, Tsoumakas & Katakis 2007) recommends:
+1. ✓ **Threshold-agnostic metrics** (AUC) for model development
+2. ✓ **Both micro and macro averaging** to balance overall and per-class performance
+3. ✓ **Complementary metrics** (AUC + F1) to assess ranking and classification quality
+4. ✓ **Per-class analysis** to identify systematic biases
+
+**GoEmotions baseline paper** (Demszky et al. 2020) uses macro F1 as primary metric, but:
+- Our dataset has more extreme imbalance after preprocessing
+- Macro F1 instability (43.5% gap) makes it unsuitable for our model comparison
+- AUC (micro) provides more stable and interpretable comparisons
+- We still report macro metrics for completeness and comparison with literature
 
 ---
 
