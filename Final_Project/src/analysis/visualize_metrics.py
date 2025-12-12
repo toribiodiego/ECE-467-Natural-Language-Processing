@@ -4,15 +4,16 @@ Metric Visualization Script
 Generates metric correlation plots and trade-off analysis visualizations
 comparing RoBERTa-Large and DistilBERT performance.
 
-Creates multi-panel figure showing:
+Creates 4 separate figures showing:
+- Metric comparison bars
+- Percentage differences
 - AUC vs F1 trade-offs
 - Macro vs Micro metric comparison
-- Relative performance differences
 
 Usage:
     python -m src.analysis.visualize_metrics \
         --metrics-csv artifacts/stats/metric_summary.csv \
-        --output artifacts/stats/metric_analysis.png
+        --output-dir artifacts/stats
 """
 
 import argparse
@@ -46,49 +47,65 @@ def load_metrics_csv(csv_path: str) -> pd.DataFrame:
     return df
 
 
-def create_comparison_plots(df: pd.DataFrame, output_path: str):
-    """Create comprehensive metric comparison visualizations.
+def create_comparison_plots(df: pd.DataFrame, output_dir: str):
+    """Create comprehensive metric comparison visualizations as separate files.
 
     Args:
         df: DataFrame with metric comparisons
-        output_path: Path to save output figure
+        output_dir: Directory to save output figures
     """
-    # Create figure with 4 subplots
-    fig = plt.figure(figsize=(16, 12))
-    gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
 
-    # Color scheme
-    roberta_color = '#2E86AB'  # Blue
-    distilbert_color = '#A23B72'  # Purple
-    delta_color = '#F18F01'  # Orange
+    # Color scheme - pure colors
+    roberta_color = '#0000FF'  # Pure Blue
+    distilbert_color = '#00FF00'  # Pure Green
+    decrease_color = '#FF0000'  # Pure Red
+    increase_color = '#00FF00'  # Pure Green
+
+    saved_files = []
 
     # Plot 1: Side-by-side metric comparison
-    ax1 = fig.add_subplot(gs[0, 0])
+    logger.info("Creating Plot 1: Metric Comparison...")
+    fig1, ax1 = plt.subplots(figsize=(12, 8))
     plot_metric_bars(ax1, df, roberta_color, distilbert_color)
+    file1 = output_path / 'metric_comparison_bars.png'
+    fig1.savefig(file1, dpi=300, bbox_inches='tight', facecolor='white')
+    saved_files.append(file1)
+    plt.close(fig1)
+    logger.info(f"  ✓ Saved to: {file1}")
 
     # Plot 2: Percentage difference waterfall
-    ax2 = fig.add_subplot(gs[0, 1])
-    plot_percentage_differences(ax2, df, delta_color)
+    logger.info("Creating Plot 2: Percentage Differences...")
+    fig2, ax2 = plt.subplots(figsize=(12, 8))
+    plot_percentage_differences(ax2, df, decrease_color, increase_color)
+    file2 = output_path / 'percentage_differences.png'
+    fig2.savefig(file2, dpi=300, bbox_inches='tight', facecolor='white')
+    saved_files.append(file2)
+    plt.close(fig2)
+    logger.info(f"  ✓ Saved to: {file2}")
 
     # Plot 3: AUC vs F1 scatter
-    ax3 = fig.add_subplot(gs[1, 0])
+    logger.info("Creating Plot 3: AUC vs F1 Trade-off...")
+    fig3, ax3 = plt.subplots(figsize=(12, 8))
     plot_auc_vs_f1(ax3, df, roberta_color, distilbert_color)
+    file3 = output_path / 'auc_vs_f1_tradeoff.png'
+    fig3.savefig(file3, dpi=300, bbox_inches='tight', facecolor='white')
+    saved_files.append(file3)
+    plt.close(fig3)
+    logger.info(f"  ✓ Saved to: {file3}")
 
     # Plot 4: Macro vs Micro comparison
-    ax4 = fig.add_subplot(gs[1, 1])
+    logger.info("Creating Plot 4: Macro vs Micro Metrics...")
+    fig4, ax4 = plt.subplots(figsize=(12, 8))
     plot_macro_vs_micro(ax4, df, roberta_color, distilbert_color)
+    file4 = output_path / 'macro_vs_micro.png'
+    fig4.savefig(file4, dpi=300, bbox_inches='tight', facecolor='white')
+    saved_files.append(file4)
+    plt.close(fig4)
+    logger.info(f"  ✓ Saved to: {file4}")
 
-    # Overall title
-    fig.suptitle('Model Performance Comparison: RoBERTa-Large vs DistilBERT',
-                 fontsize=16, fontweight='bold', y=0.995)
-
-    # Save figure
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
-    logger.info(f"✓ Saved visualization to: {output_path}")
-
-    return fig
+    return saved_files
 
 
 def plot_metric_bars(ax, df, roberta_color, distilbert_color):
@@ -124,7 +141,7 @@ def plot_metric_bars(ax, df, roberta_color, distilbert_color):
                        ha='center', va='bottom', fontsize=8)
 
 
-def plot_percentage_differences(ax, df, color):
+def plot_percentage_differences(ax, df, decrease_color, increase_color):
     """Plot percentage differences as horizontal bars."""
     metrics = df['metric'].values
     pct_diffs = df['percent_difference'].values
@@ -135,7 +152,7 @@ def plot_percentage_differences(ax, df, color):
     pct_diffs_sorted = pct_diffs[sorted_indices]
 
     # Color bars based on positive/negative
-    colors = [color if diff < 0 else '#06A77D' for diff in pct_diffs_sorted]
+    colors = [decrease_color if diff < 0 else increase_color for diff in pct_diffs_sorted]
 
     bars = ax.barh(metrics_sorted, pct_diffs_sorted, color=colors, alpha=0.8)
 
@@ -155,8 +172,8 @@ def plot_percentage_differences(ax, df, color):
     # Add legend
     from matplotlib.patches import Patch
     legend_elements = [
-        Patch(facecolor=color, alpha=0.8, label='Decrease'),
-        Patch(facecolor='#06A77D', alpha=0.8, label='Increase')
+        Patch(facecolor=decrease_color, alpha=0.8, label='Decrease'),
+        Patch(facecolor=increase_color, alpha=0.8, label='Increase')
     ]
     ax.legend(handles=legend_elements, loc='lower right', framealpha=0.9)
 
@@ -270,10 +287,10 @@ def main():
         help='Path to metric summary CSV file'
     )
     parser.add_argument(
-        '--output',
+        '--output-dir',
         type=str,
         required=True,
-        help='Path to output PNG file'
+        help='Directory to save output PNG files'
     )
 
     args = parser.parse_args()
@@ -283,19 +300,14 @@ def main():
 
     # Create visualizations
     logger.info("Generating metric correlation plots...")
-    fig = create_comparison_plots(df, args.output)
+    saved_files = create_comparison_plots(df, args.output_dir)
 
     logger.info("\n" + "="*70)
     logger.info("VISUALIZATION COMPLETE")
     logger.info("="*70)
-    logger.info(f"\nGenerated plots:")
-    logger.info("  A. Metric Comparison (side-by-side bars)")
-    logger.info("  B. Relative Performance (% differences)")
-    logger.info("  C. AUC vs F1 Trade-off (scatter plot)")
-    logger.info("  D. Macro vs Micro Metrics (grouped bars)")
-    logger.info(f"\n✓ Saved to: {args.output}")
-
-    plt.close(fig)
+    logger.info(f"\nGenerated {len(saved_files)} plots:")
+    for i, file_path in enumerate(saved_files, 1):
+        logger.info(f"  {i}. {file_path.name}")
 
 
 if __name__ == '__main__':
