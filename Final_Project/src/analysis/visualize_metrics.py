@@ -124,7 +124,7 @@ def plot_metric_bars(ax, df, roberta_color, distilbert_color):
 
     ax.set_xlabel('Metric', fontsize=11, fontweight='bold')
     ax.set_ylabel('Score', fontsize=11, fontweight='bold')
-    ax.set_title('A. Metric Comparison', fontsize=12, fontweight='bold', pad=10)
+    ax.set_title('Metric Comparison', fontsize=12, fontweight='bold', pad=10)
     ax.set_xticks(x)
     ax.set_xticklabels(metrics, rotation=45, ha='right')
     ax.legend(loc='upper right', framealpha=0.9)
@@ -157,7 +157,7 @@ def plot_percentage_differences(ax, df, decrease_color, increase_color):
     bars = ax.barh(metrics_sorted, pct_diffs_sorted, color=colors, alpha=0.8)
 
     ax.set_xlabel('Percentage Difference (%)', fontsize=11, fontweight='bold')
-    ax.set_title('B. Relative Performance (DistilBERT vs RoBERTa)',
+    ax.set_title('Relative Performance (DistilBERT vs RoBERTa)',
                 fontsize=12, fontweight='bold', pad=10)
     ax.axvline(x=0, color='black', linestyle='-', linewidth=0.8, alpha=0.5)
     ax.grid(True, alpha=0.3, axis='x')
@@ -211,7 +211,7 @@ def plot_auc_vs_f1(ax, df, roberta_color, distilbert_color):
 
     ax.set_xlabel('AUC (micro)', fontsize=11, fontweight='bold')
     ax.set_ylabel('F1 Score (micro)', fontsize=11, fontweight='bold')
-    ax.set_title('C. AUC vs F1 Trade-off', fontsize=12, fontweight='bold', pad=10)
+    ax.set_title('AUC vs F1 Trade-off', fontsize=12, fontweight='bold', pad=10)
     ax.grid(True, alpha=0.3)
     ax.legend(loc='lower right', framealpha=0.9)
 
@@ -268,7 +268,7 @@ def plot_macro_vs_micro(ax, df, roberta_color, distilbert_color):
 
     ax.set_xlabel('Metric Type', fontsize=11, fontweight='bold')
     ax.set_ylabel('Score', fontsize=11, fontweight='bold')
-    ax.set_title('D. Macro vs Micro Metrics', fontsize=12, fontweight='bold', pad=10)
+    ax.set_title('Macro vs Micro Metrics', fontsize=12, fontweight='bold', pad=10)
     ax.set_xticks(x)
     ax.set_xticklabels(metric_types)
     ax.legend(loc='upper right', framealpha=0.9, fontsize=9)
