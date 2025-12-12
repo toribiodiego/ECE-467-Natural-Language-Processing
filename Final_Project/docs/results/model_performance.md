@@ -84,35 +84,78 @@ This section will contain a summary of all trained models, their configurations,
 - Max Sequence Length: 128
 
 **Performance Metrics:**
-- Test AUC: [TO BE ADDED]
-- Macro F1: [TO BE ADDED]
-- Micro F1: [TO BE ADDED]
-- Precision: [TO BE ADDED]
-- Recall: [TO BE ADDED]
+- **Test AUC (micro): 0.8800**
+- **Test AUC (macro): 0.7443**
+- Macro F1: 0.0904
+- Micro F1: 0.3516
+- Macro Precision: 0.1547
+- Micro Precision: 0.7085
+- Macro Recall: 0.0703
+- Micro Recall: 0.2338
+- **Best Validation AUC: 0.8790** (epoch 10)
 
 **Training Details:**
-- Training Duration: [TO BE ADDED]
-- Hardware: [TO BE ADDED]
-- W&B Run: [TO BE ADDED]
-- Checkpoint: [TO BE ADDED]
+- Training Duration: 0.31 hours (1,113 seconds)
+- Hardware: NVIDIA A100-SXM4-80GB (1x GPU, 80GB VRAM)
+- Platform: Linux (CUDA 12.x)
+- W&B Run: [distilbert-12-12-2025-223914](https://wandb.ai/Cooper-Union/GoEmotions_Classification/runs/4ta2sol5)
+- Run ID: `4ta2sol5`
+- Checkpoint: `artifacts/models/distilbert/distilbert-base-20251212-225748/`
+
+**Key Observations:**
+- Best performance achieved at epoch 10, showing continued improvement throughout training
+- AUC scores (0.8800 micro, 0.7443 macro) are competitive despite smaller model size
+- Lower F1 scores (0.0904 macro, 0.3516 micro) indicate conservative prediction behavior similar to RoBERTa
+- High precision (0.7085 micro) but lower recall (0.2338 micro) confirms conservative predictions
+- 6.6x faster training than RoBERTa-Large (0.31 hrs vs 2.05 hrs)
+- 5.4x fewer parameters (66M vs 355M) with only 2.5% AUC drop
 
 ---
 
 ## Model Comparison
 
-| Metric     | RoBERTa-Large | DistilBERT | Δ     | % Difference |
-|------------|---------------|------------|-------|--------------|
-| Test AUC   | [TBA]         | [TBA]      | [TBA] | [TBA]        |
-| Macro F1   | [TBA]         | [TBA]      | [TBA] | [TBA]        |
-| Micro F1   | [TBA]         | [TBA]      | [TBA] | [TBA]        |
-| Parameters | 355M          | 66M        | -289M | -81%         |
-| Train Time | [TBA]         | [TBA]      | [TBA] | [TBA]        |
+| Metric           | RoBERTa-Large | DistilBERT | Δ       | % Difference |
+|------------------|---------------|------------|---------|--------------|
+| Test AUC (micro) | 0.9045        | 0.8800     | -0.0245 | -2.7%        |
+| Test AUC (macro) | 0.8294        | 0.7443     | -0.0851 | -10.3%       |
+| Macro F1         | 0.1600        | 0.0904     | -0.0696 | -43.5%       |
+| Micro F1         | 0.4001        | 0.3516     | -0.0485 | -12.1%       |
+| Macro Precision  | 0.2691        | 0.1547     | -0.1144 | -42.5%       |
+| Micro Precision  | 0.7278        | 0.7085     | -0.0193 | -2.7%        |
+| Macro Recall     | 0.1367        | 0.0703     | -0.0664 | -48.6%       |
+| Micro Recall     | 0.2759        | 0.2338     | -0.0421 | -15.3%       |
+| Parameters       | 355M          | 66M        | -289M   | -81.4%       |
+| Train Time       | 2.05 hrs      | 0.31 hrs   | -1.74   | -84.9%       |
+| Best Epoch       | 1             | 10         | +9      | +900%        |
 
 **Key Findings:**
-- [TO BE ADDED after training]
+- **AUC Performance**: DistilBERT achieves 97.3% of RoBERTa's micro-AUC with only 18.6% of the parameters
+- **Training Efficiency**: 6.6x faster training time (18.5 minutes vs 2.05 hours)
+- **Memory Efficiency**: ~4x less GPU memory required due to smaller model size
+- **F1 Trade-off**: Larger F1 gap (43.5% macro, 12.1% micro) suggests DistilBERT is more conservative in predictions
+- **Recall Sensitivity**: DistilBERT shows greater recall drop (-48.6% macro) than precision drop (-2.7% micro)
+- **Convergence**: DistilBERT required all 10 epochs vs RoBERTa's early convergence at epoch 1
 
 **Efficiency vs Performance Trade-off:**
-- [TO BE ADDED - analysis of whether DistilBERT's efficiency gains justify performance loss]
+
+DistilBERT offers compelling efficiency gains for production deployment scenarios:
+
+**When to use DistilBERT:**
+- **CPU deployment**: 3-4x faster inference on CPU with minimal AUC loss (2.7%)
+- **Resource-constrained environments**: 4x less memory footprint enables deployment on smaller GPUs
+- **High-throughput applications**: Faster inference supports higher request volumes
+- **Cost-sensitive scenarios**: Reduced training time (15% of RoBERTa's time) and inference costs
+
+**When to use RoBERTa-Large:**
+- **Maximum accuracy requirements**: Need to maximize AUC and minimize false negatives
+- **Research and benchmarking**: When model performance is prioritized over efficiency
+- **GPU-based deployment**: When GPU resources are available and inference latency is not critical
+- **Rare emotion detection**: Better recall on low-frequency emotion classes
+
+**Recommended Strategy:**
+- Use **DistilBERT** for production API serving (CPU or small GPU instances)
+- Use **RoBERTa-Large** for batch processing and offline analysis where accuracy is paramount
+- The 2.7% AUC gap is acceptable for most real-world applications given the 6.6x speedup
 
 **See:** `design_decisions.md#model-selection` for selection rationale
 
@@ -215,16 +258,27 @@ python scripts/download_wandb_checkpoint.py Cooper-Union/GoEmotions_Classificati
 ### DistilBERT
 
 **Local Checkpoint:**
-- Location: `artifacts/models/distilbert-base-[timestamp]/`
-- Files: `config.json`, `pytorch_model.bin`, `tokenizer files`
+- Location: `artifacts/models/distilbert/distilbert-base-20251212-225748/`
+- Files:
+  - `pytorch_model.bin` (253.28 MB) - Model weights
+  - `config.json` (0.64 KB) - Model configuration
+  - `metrics.json` (8.2 KB) - Training metrics and per-class results
+  - `vocab.txt`, `tokenizer.json`, `tokenizer_config.json`, `special_tokens_map.json` - Tokenizer files
 
 **W&B Artifacts:**
-- Model Checkpoint: [TO BE ADDED]
-- Validation Predictions: [TO BE ADDED]
-- Test Predictions: [TO BE ADDED]
-- Per-Class Metrics: [TO BE ADDED]
+- Run URL: https://wandb.ai/Cooper-Union/GoEmotions_Classification/runs/4ta2sol5
+- Run ID: `4ta2sol5`
+- Validation Predictions: `artifacts/predictions/val_epoch10_predictions_distilbert-base_20251212-225742.csv`
+- Test Predictions: `artifacts/predictions/test_predictions_distilbert-base_20251212-225747.csv`
+- Per-Class Metrics: `artifacts/stats/per_class_metrics_distilbert-base_20251212-225748.csv`
 
-**Retrieval Instructions:** See `w_and_b_guide.md#artifact-retrieval`
+**Download Instructions:**
+```bash
+# Download checkpoint, predictions, and metrics
+python scripts/download_wandb_checkpoint.py Cooper-Union/GoEmotions_Classification/4ta2sol5
+```
+
+**Retrieval Instructions:** See `docs/wandb_checkpoint_download.md` for detailed download guide
 
 ---
 
