@@ -7,7 +7,7 @@ on the GoEmotions dataset with configurable hyperparameters and optional
 Weights & Biases integration.
 
 Usage:
-    python -m src.training.train --model roberta-large --lr 2e-5 --batch-size 16 --epochs 4
+    python -m src.training.train --model roberta-large --lr 2e-5 --batch-size 16 --epochs 10
     python -m src.training.train --model distilbert-base --lr 3e-5 --batch-size 32 --no-wandb
 """
 
@@ -125,7 +125,7 @@ def parse_args() -> argparse.Namespace:
     training_group.add_argument(
         '--epochs',
         type=int,
-        default=4,
+        default=10,
         help='Number of training epochs'
     )
     training_group.add_argument(
@@ -664,6 +664,11 @@ def train_model(
         'epoch_times': []
     }
 
+    # Track best model based on validation AUC
+    best_val_auc = -1.0
+    best_model_state = None
+    best_epoch = 0
+
     # Track training start time
     training_start_time = time.time()
 
@@ -848,6 +853,26 @@ def train_model(
             samples_per_sec=samples_per_sec,
             use_wandb=use_wandb
         )
+
+        # Save best model based on validation AUC
+        if val_auc > best_val_auc:
+            best_val_auc = val_auc
+            best_epoch = epoch + 1
+            # Save a deep copy of the model state
+            best_model_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+            logger.info(f"  New best model! Val AUC: {val_auc:.4f} (epoch {best_epoch})")
+            logger.info("")
+
+    # Restore best model state after training completes
+    if best_model_state is not None:
+        model.load_state_dict(best_model_state)
+        logger.info("")
+        logger.info("=" * 70)
+        logger.info(f"Restored best model from epoch {best_epoch} (Val AUC: {best_val_auc:.4f})")
+        logger.info("=" * 70)
+        logger.info("")
+    else:
+        logger.warning("No best model state found, using final epoch model")
 
     # Calculate total training time
     total_training_time = time.time() - training_start_time
