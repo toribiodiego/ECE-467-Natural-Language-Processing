@@ -13,9 +13,9 @@
 # Core ML/NLP Libraries
 datasets==2.14.5           # HuggingFace datasets for loading GoEmotions
 transformers==4.30.2       # HuggingFace transformers (BERT, RoBERTa, DistilBERT)
-torch==2.0.1               # PyTorch for model training
-torchvision==0.15.2        # PyTorch vision utilities
-torchaudio==2.0.2          # PyTorch audio (dependency)
+torch>=2.0.1               # PyTorch for model training (flexible version for Python 3.12+)
+torchvision>=0.15.2        # PyTorch vision utilities
+torchaudio>=2.0.2          # PyTorch audio (dependency)
 
 # Scientific Computing
 numpy==1.24.3              # Numerical computing

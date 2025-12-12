@@ -124,19 +124,20 @@ source "$VENV_DIR/bin/activate"
 if [ "${NEED_PIP_INSTALL:-false}" = "true" ]; then
     log_info "Installing pip via get-pip.py..."
     curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
-    $PYTHON_CMD /tmp/get-pip.py
+    $PYTHON_CMD /tmp/get-pip.py --quiet
     rm -f /tmp/get-pip.py
     log_info "Pip installed successfully"
 fi
 
 # Upgrade pip
 log_info "Upgrading pip..."
-pip install --upgrade pip > /dev/null 2>&1
+pip install --upgrade pip --quiet
 
 # Install dependencies
 if [ -f requirements.txt ]; then
     log_info "Installing dependencies from requirements.txt..."
-    pip install -r requirements.txt
+    log_info "This may take several minutes..."
+    pip install -r requirements.txt --quiet
 
     if [ $? -ne 0 ]; then
         log_error "Failed to install dependencies"
@@ -146,7 +147,6 @@ if [ -f requirements.txt ]; then
     log_info "Dependencies installed successfully"
 else
     log_warn "requirements.txt not found. Skipping dependency installation."
-    log_warn "You will need to create requirements.txt and run: pip install -r requirements.txt"
 fi
 
 # Validate installation
