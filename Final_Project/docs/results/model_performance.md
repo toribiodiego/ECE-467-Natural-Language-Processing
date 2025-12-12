@@ -41,21 +41,34 @@ This section will contain a summary of all trained models, their configurations,
 - Learning Rate: 2e-5
 - Batch Size: 16
 - Dropout: 0.1
-- Epochs: 4
+- Epochs: 10 (best at epoch 1)
 - Max Sequence Length: 128
 
 **Performance Metrics:**
-- Test AUC: [TO BE ADDED]
-- Macro F1: [TO BE ADDED]
-- Micro F1: [TO BE ADDED]
-- Precision: [TO BE ADDED]
-- Recall: [TO BE ADDED]
+- **Test AUC (micro): 0.9045**
+- **Test AUC (macro): 0.8294**
+- Macro F1: 0.1600
+- Micro F1: 0.4001
+- Macro Precision: 0.2691
+- Micro Precision: 0.7278
+- Macro Recall: 0.1367
+- Micro Recall: 0.2759
+- **Best Validation AUC: 0.9038** (epoch 1)
 
 **Training Details:**
-- Training Duration: [TO BE ADDED]
-- Hardware: [TO BE ADDED]
-- W&B Run: [TO BE ADDED]
-- Checkpoint: [TO BE ADDED]
+- Training Duration: 2.05 hours (7,363 seconds)
+- Hardware: NVIDIA A100-SXM4-80GB (1x GPU, 80GB VRAM)
+- Platform: Linux (CUDA 12.x)
+- W&B Run: [roberta-large-12-12-2025-190654](https://wandb.ai/Cooper-Union/GoEmotions_Classification/runs/a71b9ddo)
+- Run ID: `a71b9ddo`
+- Checkpoint: `artifacts/models/roberta/roberta-large-20251212-211010/`
+
+**Key Observations:**
+- Best performance achieved at epoch 1, suggesting early convergence
+- High AUC scores (0.9045 micro, 0.8294 macro) indicate excellent ranking ability
+- Lower F1 scores indicate conservative prediction threshold (default 0.5 may not be optimal)
+- High precision (0.7278 micro) but lower recall (0.2759 micro) suggests model is conservative
+- Validation AUC slightly declined after epoch 1, indicating potential overfitting
 
 ---
 
@@ -177,16 +190,27 @@ Different threshold strategies evaluated:
 ### RoBERTa-Large
 
 **Local Checkpoint:**
-- Location: `artifacts/models/roberta-large-[timestamp]/`
-- Files: `config.json`, `pytorch_model.bin`, `tokenizer files`
+- Location: `artifacts/models/roberta/roberta-large-20251212-211010/`
+- Files:
+  - `pytorch_model.bin` (1.36 GB) - Model weights
+  - `config.json` (2.3 KB) - Model configuration
+  - `metrics.json` (8.4 KB) - Training metrics and per-class results
+  - `vocab.json`, `merges.txt`, `tokenizer.json`, `tokenizer_config.json`, `special_tokens_map.json` - Tokenizer files
 
 **W&B Artifacts:**
-- Model Checkpoint: [TO BE ADDED]
-- Validation Predictions: [TO BE ADDED]
-- Test Predictions: [TO BE ADDED]
-- Per-Class Metrics: [TO BE ADDED]
+- Run URL: https://wandb.ai/Cooper-Union/GoEmotions_Classification/runs/a71b9ddo
+- Run ID: `a71b9ddo`
+- Validation Predictions: `artifacts/predictions/val_epoch10_predictions_roberta-large_20251212-210940.csv`
+- Test Predictions: `artifacts/predictions/test_predictions_roberta-large_20251212-211009.csv`
+- Per-Class Metrics: `artifacts/stats/per_class_metrics_roberta-large_20251212-211010.csv`
 
-**Retrieval Instructions:** See `w_and_b_guide.md#artifact-retrieval`
+**Download Instructions:**
+```bash
+# Download checkpoint, predictions, and metrics
+python scripts/download_wandb_checkpoint.py Cooper-Union/GoEmotions_Classification/a71b9ddo
+```
+
+**Retrieval Instructions:** See `docs/wandb_checkpoint_download.md` for detailed download guide
 
 ### DistilBERT
 
