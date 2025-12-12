@@ -33,8 +33,9 @@ datasets/
 *.ckpt
 checkpoints/
 
-# Weights & Biases
+# Weights & Biases (ignore run data, but allow docs)
 wandb/
+!docs/wandb/
 
 # IDE
 .vscode/
