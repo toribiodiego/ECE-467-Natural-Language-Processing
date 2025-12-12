@@ -95,16 +95,34 @@ if [ "${SKIP_VENV_CREATION:-false}" != "true" ]; then
     $PYTHON_CMD -m venv "$VENV_DIR"
 
     if [ $? -ne 0 ]; then
-        log_error "Failed to create virtual environment"
-        exit 1
-    fi
+        log_warn "Standard venv creation failed, trying without pip (common in Colab)..."
+        $PYTHON_CMD -m venv "$VENV_DIR" --without-pip
 
-    log_info "Virtual environment created successfully"
+        if [ $? -ne 0 ]; then
+            log_error "Failed to create virtual environment"
+            exit 1
+        fi
+
+        log_info "Virtual environment created without pip"
+        NEED_PIP_INSTALL=true
+    else
+        log_info "Virtual environment created successfully"
+        NEED_PIP_INSTALL=false
+    fi
 fi
 
 # Activate virtual environment
 log_info "Activating virtual environment..."
 source "$VENV_DIR/bin/activate"
+
+# Install pip if needed
+if [ "${NEED_PIP_INSTALL:-false}" = "true" ]; then
+    log_info "Installing pip via get-pip.py..."
+    curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+    $PYTHON_CMD /tmp/get-pip.py
+    rm -f /tmp/get-pip.py
+    log_info "Pip installed successfully"
+fi
 
 # Upgrade pip
 log_info "Upgrading pip..."
