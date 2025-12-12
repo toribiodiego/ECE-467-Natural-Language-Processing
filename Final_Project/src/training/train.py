@@ -895,6 +895,10 @@ def train_model(
     cost_stats = cost_tracker.log_summary(logger_instance=logger)
     history['cost_stats'] = cost_stats
 
+    # Add best model tracking info to history
+    history['best_val_auc'] = best_val_auc
+    history['best_epoch'] = best_epoch
+
     return history
 
 
@@ -1396,8 +1400,9 @@ def main() -> None:
         checkpoint_metrics = {
             'train_loss': history['train_loss'],
             'val_loss': history['val_loss'],
-            'best_val_loss': float(min(history['val_loss'])),
-            'best_epoch': best_epoch,
+            'val_auc': history['val_auc'],
+            'best_val_auc': float(history['best_val_auc']),
+            'best_epoch': history['best_epoch'],
             'test_metrics': test_metrics
         }
         checkpoint_path = save_checkpoint(

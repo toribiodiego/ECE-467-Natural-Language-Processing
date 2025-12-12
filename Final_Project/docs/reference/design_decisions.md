@@ -142,7 +142,7 @@ Both models provide valuable comparison:
 {
     'learning_rate': 2e-5,
     'batch_size': 16,
-    'num_epochs': 3-4,
+    'num_epochs': 10,
     'dropout': 0.1,
     'max_length': 128
 }
@@ -153,7 +153,7 @@ Both models provide valuable comparison:
 {
     'learning_rate': 3e-5,
     'batch_size': 32,
-    'num_epochs': 3-4,
+    'num_epochs': 10,
     'dropout': 0.1,
     'max_length': 128
 }
@@ -189,6 +189,43 @@ The following hyperparameters will be studied in ablation experiments:
 - Threshold strategies: {global, per-label, top-k}
 
 See `ablation_studies/README.md` for results and analysis.
+
+### Checkpoint Saving Strategy
+
+**Decision:** Save the model checkpoint from the epoch with the highest validation AUC, not the final epoch.
+
+**Rationale:**
+
+Training does not always monotonically improve validation performance. Models may overfit in later epochs, leading to:
+- Decreased validation AUC despite continued decrease in training loss
+- Suboptimal final checkpoints if using the last epoch
+
+**Implementation:**
+
+During training, the system:
+1. Tracks validation AUC after each epoch
+2. Saves a deep copy of the model state when validation AUC improves
+3. After training completes, restores the best model state
+4. Saves this best-performing model as the final checkpoint
+
+**Benefits:**
+- Guarantees saved checkpoint has the best validation performance
+- Prevents overfitting from degrading the final model
+- Matches the original project methodology (validation AUC as primary metric)
+
+**Example:**
+```
+Epoch 1: Val AUC = 0.503 → Saved as best
+Epoch 2: Val AUC = 0.504 → Saved as new best
+Epoch 3: Val AUC = 0.502 → Not saved (worse than epoch 2)
+...
+Final: Restored epoch 2 model (Val AUC = 0.504)
+```
+
+**Alternatives Considered:**
+- Save final epoch (rejected - may overfit)
+- Save all epochs (rejected - excessive storage)
+- Early stopping (considered for future - adds complexity)
 
 ---
 
