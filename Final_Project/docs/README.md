@@ -2,71 +2,88 @@
 
 This directory contains comprehensive documentation for the GoEmotions emotion classification project.
 
-## Documentation Files
+## Quick Navigation
 
-### Core Documentation
+```
+docs/
+├── guides/        # Step-by-step how-to guides
+├── reference/     # Technical reference and design docs
+├── results/       # Model performance and findings
+└── tools/         # Tool-specific documentation
+```
 
-- **`replication.md`** - Step-by-step guide for reproducing all analysis, training, and visualization
+## Documentation by Category
+
+### Guides
+
+How-to instructions for running experiments and reproducing results.
+
+- **`guides/replication.md`** - Complete replication guide
   - Environment setup and dependencies
   - Running data analysis scripts
   - Model training procedures
   - Figure generation
   - Troubleshooting common issues
 
-- **`dataset_analysis.md`** - Comprehensive dataset statistics and characteristics
+### Reference
+
+Technical reference material and design documentation.
+
+- **`reference/dataset_analysis.md`** - Dataset statistics and characteristics
   - Dataset overview and splits
   - Multi-label distribution analysis
   - Per-emotion statistics and imbalance
   - CSV export specifications
   - Data file reference
 
-- **`design_decisions.md`** - Design choices and rationales
+- **`reference/design_decisions.md`** - Design choices and rationales
   - Data preprocessing decisions (neutral handling, etc.)
   - Visualization design choices (colors, sizing)
   - Model architecture selection
   - Training configuration and hyperparameters
   - Evaluation metrics and threshold strategies
 
-- **`model_performance.md`** - Final trained model metrics and comparison
+### Results
+
+Performance metrics and experimental findings.
+
+- **`results/model_performance.md`** - Final trained model metrics
   - RoBERTa-Large and DistilBERT performance
   - Model comparison table
   - Per-emotion performance breakdown
   - Threshold selection results
   - W&B run references and checkpoint locations
 
-- **`wandb/`** - Weights & Biases integration documentation
-  - **`README.md`** - Quick start and overview
-  - **`file_organization.md`** - Files tab organization and structure
-  - **`downloading_files.md`** - Download files from W&B (UI and API)
-  - **`metrics_guide.md`** - Metrics logging and interpretation
-
-### Ablation Studies
-
-- **`../ablation_studies/README.md`** - Results and analysis of ablation experiments
+- **`../ablation_studies/README.md`** - Ablation study results
   - Quick comparison table of all ablations
   - Individual study results (neutral, loss weighting, thresholds, etc.)
   - W&B artifact links
-  - Cross-references to design decisions and model performance
+  - Cross-references to design decisions
 
-### Future Documentation
+### Tools
 
-The following documentation files may be added as needed:
+Tool-specific integration documentation.
 
-- **`deployment.md`** - Production deployment guide (if applicable)
+- **`tools/wandb/`** - Weights & Biases integration
+  - **`README.md`** - Quick start and overview
+  - **`file_organization.md`** - Files tab organization
+  - **`downloading_files.md`** - Download files (UI and API)
+  - **`metrics_guide.md`** - Metrics logging and interpretation
 
 ## Documentation Organization
 
-Documentation is organized by purpose:
+Documentation follows a clear categorization pattern:
 
-- **Procedures** (`replication.md`) - How to run things
-- **Data** (`dataset_analysis.md`) - What the data looks like
-- **Decisions** (`design_decisions.md`) - Why we made certain choices
-- **Results** (`ablation_studies/`, `model_performance.md`) - What we found
+- **guides/** - Procedural instructions for running tasks
+- **reference/** - Technical specs and design rationale
+- **results/** - Experimental outcomes and findings
+- **tools/** - Tool integration and workflows
 
-This modular structure makes it easier to:
-- Find specific information quickly
-- Update individual topics without affecting others
-- Maintain consistency as the project grows
+This structure makes it easier to:
+- Navigate to the right documentation quickly
+- Understand the purpose of each document
+- Maintain and update documentation independently
+- Scale documentation as the project grows
 
 ## Documentation Standards
 
