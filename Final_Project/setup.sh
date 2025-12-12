@@ -53,10 +53,38 @@ else
     pip install --upgrade pip setuptools wheel --quiet
 fi
 
-# Install dependencies with progress indication
+# Install dependencies with progress bar
 echo "Installing dependencies..."
 if [ -f requirements.txt ]; then
-    pip install -r requirements.txt --progress-bar off 2>&1 | grep -E "(Collecting|Installing|Successfully)" | sed 's/^/  /'
+    # Count total packages to install
+    TOTAL=$(grep -cE "^[a-zA-Z]" requirements.txt)
+
+    # Install with progress tracking
+    pip install -r requirements.txt 2>&1 | \
+    python3 -c "
+import sys
+import re
+
+total = $TOTAL
+current = 0
+last_percent = -1
+
+for line in sys.stdin:
+    if 'Successfully installed' in line:
+        current = total
+    elif 'Collecting' in line or 'Downloading' in line:
+        current += 1
+        if current > total:
+            current = total
+
+    percent = int((current / total) * 100)
+    if percent != last_percent and percent <= 100:
+        bars = int(percent / 2)
+        print(f'\r  [{'=' * bars}{' ' * (50 - bars)}] {percent}%', end='', flush=True)
+        last_percent = percent
+
+print()  # New line at end
+"
 else
     echo "Error: requirements.txt not found"
     exit 1
