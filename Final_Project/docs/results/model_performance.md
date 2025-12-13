@@ -198,37 +198,87 @@ DistilBERT offers compelling efficiency gains for production deployment scenario
 
 ## Per-Emotion Performance
 
+**Model:** RoBERTa-Large
+**Classification Threshold:** 0.5 (default)
+**Total Test Samples:** 5,427
+**Total Emotions:** 28
+
 ### Top 5 Best Performing Emotions
 
 | Rank | Emotion    | F1 Score | Precision | Recall | Support |
 |------|------------|----------|-----------|--------|---------|
-| 1    | [TBA]      | [TBA]    | [TBA]     | [TBA]  | [TBA]   |
-| 2    | [TBA]      | [TBA]    | [TBA]     | [TBA]  | [TBA]   |
-| 3    | [TBA]      | [TBA]    | [TBA]     | [TBA]  | [TBA]   |
-| 4    | [TBA]      | [TBA]    | [TBA]     | [TBA]  | [TBA]   |
-| 5    | [TBA]      | [TBA]    | [TBA]     | [TBA]  | [TBA]   |
+| 1    | gratitude  | 0.904    | 0.974     | 0.844  | 352     |
+| 2    | love       | 0.740    | 0.763     | 0.718  | 238     |
+| 3    | amusement  | 0.724    | 0.808     | 0.655  | 264     |
+| 4    | admiration | 0.568    | 0.684     | 0.486  | 504     |
+| 5    | neutral    | 0.497    | 0.690     | 0.389  | 1,787   |
+
+**Observations:**
+- **gratitude** achieves exceptional performance (F1=0.904) with high precision (0.974)
+- Top emotions show strong precision (0.69-0.97) but varying recall (0.39-0.84)
+- **neutral** has highest support (1,787 samples) but only ranks 5th in F1
 
 ### Bottom 5 Worst Performing Emotions
 
-| Rank | Emotion    | F1 Score | Precision | Recall | Support |
-|------|------------|----------|-----------|--------|---------|
-| 24   | [TBA]      | [TBA]    | [TBA]     | [TBA]  | [TBA]   |
-| 25   | [TBA]      | [TBA]    | [TBA]     | [TBA]  | [TBA]   |
-| 26   | [TBA]      | [TBA]    | [TBA]     | [TBA]  | [TBA]   |
-| 27   | [TBA]      | [TBA]    | [TBA]     | [TBA]  | [TBA]   |
-| 28   | [TBA]      | [TBA]    | [TBA]     | [TBA]  | [TBA]   |
+| Rank | Emotion        | F1 Score | Precision | Recall | Support |
+|------|----------------|----------|-----------|--------|---------|
+| 24   | disgust        | 0.000    | 0.000     | 0.000  | 123     |
+| 25   | disapproval    | 0.000    | 0.000     | 0.000  | 267     |
+| 26   | disappointment | 0.000    | 0.000     | 0.000  | 151     |
+| 27   | desire         | 0.000    | 0.000     | 0.000  | 83      |
+| 28   | fear           | 0.000    | 0.000     | 0.000  | 78      |
+
+**Observations:**
+- Model **completely fails** to predict these 5 emotions at threshold 0.5
+- These emotions have moderate support (78-267 samples), so low performance is not solely due to data scarcity
+- Other emotions with zero F1: caring, anger, sadness, remorse, relief, realization, pride, nervousness, grief, confusion, approval, excitement, embarrassment (18 total emotions with F1=0)
+
+### Key Insights
+
+**Conservative Prediction Behavior:**
+The model exhibits extremely conservative predictions at the default threshold (0.5):
+- **High precision, low recall** pattern across top emotions (e.g., neutral: P=0.690, R=0.389)
+- Only **10 emotions** achieve F1 > 0.0, meaning 18 emotions are never predicted
+- Total predicted positives: 2,399 vs actual positives: 6,329 (38% coverage)
+
+**Why the model struggles with many emotions:**
+
+1. **Threshold too conservative**: Default 0.5 threshold filters out most predictions
+   - Per-emotion threshold optimization could significantly improve F1 scores
+   - See threshold selection analysis below
+
+2. **Class imbalance**: Bottom emotions don't necessarily have smallest support
+   - disapproval (267 samples) has more support than amusement (264), yet achieves F1=0.0 vs 0.724
+   - Suggests some emotions are intrinsically harder to distinguish
+
+3. **Multi-label complexity**: Emotions that frequently co-occur may be harder to isolate
+   - See `dataset_analysis.md#label-cooccurrence` for correlation patterns
+
+**Recommended next steps:**
+- Implement per-emotion threshold optimization to improve recall
+- Analyze prediction probability distributions for zero-F1 emotions
+- Consider focal loss or class-weighted BCE to address prediction imbalance
+
+### Visualization
+
+**Bar Chart:** `output/figures/07_per_emotion_f1_scores.png`
+
+The visualization shows all 28 emotions ranked by F1 score with color-coded performance:
+- Green: High F1 (>0.5)
+- Yellow: Medium F1 (0.1-0.5)
+- Red: Low F1 (<0.1)
 
 ### Full Per-Emotion Breakdown
 
-**Data Location:** `output/stats/per_emotion_f1_scores.csv`
+**Data Location:**
+- `artifacts/stats/per_emotion_scores.csv` - Basic metrics
+- `artifacts/stats/per_emotion_scores_annotated.csv` - With top/bottom annotations
 
-**W&B Artifact:** [TO BE ADDED]
+**W&B Artifact:** [TO BE UPLOADED - Task 04 remaining]
 
-**Analysis:**
-- [TO BE ADDED - correlation between performance and sample size]
-- [TO BE ADDED - impact of multi-label complexity on performance]
-
-**See:** `dataset_analysis.md#per-emotion-statistics` for sample distribution context
+**See Also:**
+- `design_decisions.md#evaluation-metrics` for metric selection rationale
+- `dataset_analysis.md#per-emotion-statistics` for sample distribution context
 
 ---
 
