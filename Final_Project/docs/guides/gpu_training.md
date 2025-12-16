@@ -208,6 +208,51 @@ python -m src.training.train \
 
 ---
 
+## Quick Test Training (Verify Auto-Disconnect)
+
+**Objective:** Run a fast training test to verify the Colab auto-disconnect feature works correctly before starting longer training jobs.
+
+**Why run this first:**
+- Completes in ~3-5 minutes
+- Verifies watcher cell detects the flag file
+- Confirms runtime disconnects automatically
+- No wasted compute if setup is incorrect
+
+**Prerequisites:**
+1. Watcher cell is running (see "Colab Auto-Disconnect Setup" above)
+2. Virtual environment is activated
+3. W&B is configured
+
+**Test command** (copy-paste ready):
+
+```bash
+python -m src.training.train \
+  --model distilbert-base-uncased \
+  --lr 3e-5 \
+  --batch-size 32 \
+  --max-epochs 2 \
+  --max-train-samples 100 \
+  --max-eval-samples 50 \
+  --dropout 0.1 \
+  --colab \
+  --output-dir artifacts/models/distilbert-test
+```
+
+**What to expect:**
+1. Training starts and runs for 2 epochs on 100 samples (~2-3 minutes)
+2. Training completes and logs "Training complete" message
+3. Script creates flag file at `/content/__DISCONNECT__`
+4. Watcher cell detects the flag and prints "DISCONNECT FLAG DETECTED!"
+5. Runtime disconnects automatically after 5 second countdown
+
+**If disconnect doesn't happen:**
+- Check watcher cell is still running (not stopped/errored)
+- Verify flag file exists: `!ls -la /content/__DISCONNECT__`
+- Check watcher cell output for errors
+- Ensure `--colab` flag is included in training command
+
+---
+
 ## DistilBERT Multi-Seed Robustness Training (Task 08)
 
 **Objective:** Train DistilBERT with 3 different random seeds to quantify variance for statistical significance testing.
