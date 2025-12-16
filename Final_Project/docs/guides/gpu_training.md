@@ -271,8 +271,6 @@ python -m src.training.train \
 
 **Objective:** Train DistilBERT with 3 different random seeds to quantify variance for statistical significance testing.
 
-**Why DistilBERT?** 6.6x faster training than RoBERTa-Large (3 × 0.31 hrs = ~1 hour vs 3 × 2.05 hrs = ~6 hours), while providing statistically valid variance estimates.
-
 ### Seed 42
 
 ```bash
@@ -343,9 +341,7 @@ python -m src.training.train \
   --output-dir artifacts/models/distilbert-loss-baseline
 ```
 
-### Weighted BCE Loss (Class-Weighted)
-
-Applies inverse frequency weighting to address class imbalance.
+### Weighted BCE Loss
 
 ```bash
 python -m src.training.train \
@@ -361,9 +357,7 @@ python -m src.training.train \
   --output-dir artifacts/models/distilbert-loss-weighted
 ```
 
-### Focal Loss (γ=2.0)
-
-Focuses on hard-to-classify examples, particularly useful for rare emotions.
+### Focal Loss
 
 ```bash
 python -m src.training.train \
@@ -386,9 +380,7 @@ python -m src.training.train \
 
 **Objective:** Optimize max_seq_length for the best performance/efficiency trade-off.
 
-### max_seq_length=128 (Recommended)
-
-Captures 99.98% of samples with minimal truncation.
+### max_seq_length=128
 
 ```bash
 python -m src.training.train \
@@ -406,8 +398,6 @@ python -m src.training.train \
 
 ### max_seq_length=256
 
-Provides additional context for edge cases.
-
 ```bash
 python -m src.training.train \
   --model distilbert-base \
@@ -423,8 +413,6 @@ python -m src.training.train \
 ```
 
 ### max_seq_length=512
-
-Maximum context, slower inference.
 
 ```bash
 python -m src.training.train \
