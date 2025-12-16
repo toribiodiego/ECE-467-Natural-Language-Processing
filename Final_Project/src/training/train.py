@@ -1531,9 +1531,6 @@ def main() -> None:
         logger.info(f"Test metrics: AUC={test_metrics['auc']:.4f}, Macro F1={test_metrics['macro_f1']:.4f}, Micro F1={test_metrics['micro_f1']:.4f}")
         logger.info(f"Checkpoint saved to: {checkpoint_path}")
 
-        # Finish W&B run
-        finish_wandb(use_wandb=use_wandb)
-
     except ValueError as e:
         logger.error(f"Configuration error: {e}")
         sys.exit(1)
@@ -1543,6 +1540,19 @@ def main() -> None:
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         sys.exit(1)
+    finally:
+        # Ensure W&B is properly finished before any disconnect
+        if 'use_wandb' in locals():
+            finish_wandb(use_wandb=use_wandb)
+            logger.info("W&B run finished and synced")
+
+        # Request Colab disconnect if flag is set and environment is verified
+        if 'args' in locals() and args.colab:
+            if _looks_like_colab():
+                logger.info("Colab flag enabled and environment verified")
+                _request_colab_disconnect(args.colab_flag)
+            else:
+                logger.warning("Colab flag enabled but environment not detected as Colab - skipping disconnect")
 
 
 if __name__ == "__main__":
