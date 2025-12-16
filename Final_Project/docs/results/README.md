@@ -77,13 +77,13 @@ This document serves as the central hub for all experimental results, visualizat
 
 ### Label Co-occurrence
 
-**Figure 02-03: Label Co-occurrence Patterns**
-
 ![Label Cooccurrence](../../output/figures/02_label_cooccurrence.png)
-*Full co-occurrence heatmap showing all 28×28 emotion pairs*
+
+**Figure 2.** Full co-occurrence heatmap showing all 28×28 emotion pairs.
 
 ![Label Cooccurrence Clean](../../output/figures/03_label_cooccurrence_clean.png)
-*Filtered view showing only significant co-occurrences*
+
+**Figure 3.** Filtered view showing only significant co-occurrences (≥10 instances).
 
 **Key Insights:**
 - Strong positive correlations: joy-love, anger-annoyance, sadness-disappointment
@@ -93,10 +93,13 @@ This document serves as the central hub for all experimental results, visualizat
 
 ### Text Length Distributions
 
-**Figure 04-05: Character and Token Length Statistics**
-
 ![Character Length](../../output/figures/04_character_length_distributions.png)
+
+**Figure 4.** Character length distributions across train, validation, and test splits.
+
 ![Token Length](../../output/figures/05_token_length_distributions.png)
+
+**Figure 5.** Token length distributions showing coverage for max sequence length selection.
 
 **Key Insights:**
 - Mean character length: ~85 characters
@@ -107,16 +110,21 @@ This document serves as the central hub for all experimental results, visualizat
 
 ### Metric Relationships
 
-**Figure 06-09: Metric Correlations and Trade-offs**
+![Metric Comparison](../../output/figures/06_metric_correlations.png)
 
-![Metric Correlations](../../output/figures/06_metric_correlations.png)
-*Correlation matrix showing relationships between evaluation metrics*
+**Figure 6.** Side-by-side comparison of all metrics for RoBERTa-Large and DistilBERT.
+
+![Percentage Differences](../../output/figures/07_percentage_differences.png)
+
+**Figure 7.** Relative performance differences showing DistilBERT vs RoBERTa percentage changes.
 
 ![AUC vs F1](../../output/figures/08_auc_vs_f1_tradeoff.png)
-*Trade-off analysis between AUC and F1 scores*
+
+**Figure 8.** Trade-off analysis between AUC and F1 scores for both models.
 
 ![Macro vs Micro](../../output/figures/09_macro_vs_micro.png)
-*Comparison of macro-averaged vs micro-averaged metrics*
+
+**Figure 9.** Comparison of macro-averaged vs micro-averaged metrics across metric types.
 
 **Key Insights:**
 - Strong correlation between AUC variants (micro/macro)
