@@ -191,3 +191,134 @@ python -m src.training.train \
 2. Aggregate metrics to compute mean ± std
 3. Perform statistical significance tests comparing RoBERTa vs DistilBERT
 
+---
+
+## Loss Function Experiments
+
+**Objective:** Compare different loss functions to improve rare-label performance.
+
+### Baseline BCE Loss
+
+```bash
+python -m src.training.train \
+  --model distilbert-base \
+  --lr 3e-5 \
+  --batch-size 32 \
+  --epochs 10 \
+  --dropout 0.1 \
+  --loss-type bce \
+  --wandb-project GoEmotions_Classification \
+  --wandb-tags loss:baseline \
+  --output-dir artifacts/models/distilbert-loss-baseline
+```
+
+**Expected training time:** ~20 minutes
+
+### Weighted BCE Loss (Class-Weighted)
+
+Applies inverse frequency weighting to address class imbalance.
+
+```bash
+python -m src.training.train \
+  --model distilbert-base \
+  --lr 3e-5 \
+  --batch-size 32 \
+  --epochs 10 \
+  --dropout 0.1 \
+  --loss-type weighted-bce \
+  --wandb-project GoEmotions_Classification \
+  --wandb-tags loss:weighted \
+  --output-dir artifacts/models/distilbert-loss-weighted
+```
+
+**Expected training time:** ~20 minutes
+
+### Focal Loss (γ=2.0)
+
+Focuses on hard-to-classify examples, particularly useful for rare emotions.
+
+```bash
+python -m src.training.train \
+  --model distilbert-base \
+  --lr 3e-5 \
+  --batch-size 32 \
+  --epochs 10 \
+  --dropout 0.1 \
+  --loss-type focal \
+  --focal-gamma 2.0 \
+  --wandb-project GoEmotions_Classification \
+  --wandb-tags loss:focal \
+  --output-dir artifacts/models/distilbert-loss-focal
+```
+
+**Expected training time:** ~20 minutes
+
+**Total time for all 3 loss experiments:** ~1 hour
+
+---
+
+## Sequence Length Experiments
+
+**Objective:** Optimize max_seq_length for the best performance/efficiency trade-off.
+
+### max_seq_length=128 (Recommended)
+
+Captures 99.98% of samples with minimal truncation.
+
+```bash
+python -m src.training.train \
+  --model distilbert-base \
+  --lr 3e-5 \
+  --batch-size 32 \
+  --epochs 10 \
+  --dropout 0.1 \
+  --max-seq-length 128 \
+  --wandb-project GoEmotions_Classification \
+  --wandb-tags seq:128 \
+  --output-dir artifacts/models/distilbert-seq128
+```
+
+**Expected training time:** ~20 minutes
+
+### max_seq_length=256
+
+Provides additional context for edge cases.
+
+```bash
+python -m src.training.train \
+  --model distilbert-base \
+  --lr 3e-5 \
+  --batch-size 32 \
+  --epochs 10 \
+  --dropout 0.1 \
+  --max-seq-length 256 \
+  --wandb-project GoEmotions_Classification \
+  --wandb-tags seq:256 \
+  --output-dir artifacts/models/distilbert-seq256
+```
+
+**Expected training time:** ~25 minutes (higher VRAM usage)
+
+### max_seq_length=512
+
+Maximum context, slower inference.
+
+```bash
+python -m src.training.train \
+  --model distilbert-base \
+  --lr 3e-5 \
+  --batch-size 16 \
+  --epochs 10 \
+  --dropout 0.1 \
+  --max-seq-length 512 \
+  --wandb-project GoEmotions_Classification \
+  --wandb-tags seq:512 \
+  --output-dir artifacts/models/distilbert-seq512
+```
+
+**Note:** Reduced batch size to 16 to fit in GPU memory.
+
+**Expected training time:** ~35 minutes (high VRAM usage)
+
+**Total time for all 3 sequence experiments:** ~1.5 hours
+
