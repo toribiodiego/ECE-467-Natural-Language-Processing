@@ -614,6 +614,48 @@ tokenizer = AutoTokenizer.from_pretrained(
 )
 ```
 
+### Exporting Predictions from Checkpoints
+
+If predictions were not saved during training or need to be regenerated with different thresholds, use the export_predictions script:
+
+```bash
+# Export validation and test predictions from a checkpoint
+python -m src.training.export_predictions \
+  --checkpoint artifacts/models/roberta/roberta-large-20251212-211010 \
+  --output artifacts/predictions
+
+# Export with custom threshold
+python -m src.training.export_predictions \
+  --checkpoint artifacts/models/distilbert/distilbert-base-20251212-225748 \
+  --output artifacts/predictions \
+  --threshold 0.3
+
+# Export only validation split
+python -m src.training.export_predictions \
+  --checkpoint artifacts/models/roberta/roberta-large-20251212-211010 \
+  --splits validation
+```
+
+**Options:**
+- `--checkpoint`: Path to model checkpoint directory (required)
+- `--output`: Output directory for prediction CSVs (default: artifacts/predictions)
+- `--threshold`: Classification threshold (default: 0.5)
+- `--batch-size`: Batch size for inference (default: 32)
+- `--splits`: Dataset splits to process (default: validation test)
+- `--model-name`: Model name for output files (auto-detected if not provided)
+
+**Generated Files:**
+
+The script creates timestamped CSV files:
+- `val_predictions_{model}_{timestamp}.csv` - Validation predictions
+- `test_predictions_{model}_{timestamp}.csv` - Test predictions
+
+Each CSV contains:
+- `text`: Original input text
+- `true_labels`: Ground truth emotions (comma-separated)
+- `pred_labels`: Predicted emotions at threshold (comma-separated)
+- `pred_prob_{emotion}`: Probability for each of 28 emotions
+
 ---
 
 ## Figure Generation
