@@ -1,6 +1,46 @@
 # Project Documentation
 
-This directory contains comprehensive documentation for the GoEmotions emotion classification project.
+Docs for the GoEmotions emotion classification project. Use this as the landing page to find the right guide, reference, or result without digging through files. For a project overview and reports, see `../README.md` and `output/submission/`.
+
+## Start Here
+- Reproduce everything end-to-end: `guides/replication.md`
+- Train on a GPU machine: `guides/gpu_training.md`
+- W&B integration and local artifact access: `guides/wandbguide.md`
+- Just want the metrics: `results/model_performance.md` and `../output/ablation_studies/README.md`
+- Explore the analysis and training notebooks: `notebooks/Dataset_Analysis.ipynb`, `notebooks/Final_Project.ipynb`
+
+## Tasks → Where to go
+
+| Task | Doc(s) | Code entry points |
+| --- | --- | --- |
+| Run full pipeline on a fresh machine | `guides/replication.md` | `python -m src.training.train ...`; data helpers in `src/data/load_dataset.py` |
+| Train on a remote/local GPU with W&B | `guides/gpu_training.md`, `guides/wandbguide.md` | `src/training/train.py`, `src/training/wandb_utils.py` |
+| Access artifacts locally (no W&B) | `guides/wandbguide.md`, `artifacts/README.md` | Export scripts in `src/training/`, `src/analysis/` |
+| Inspect dataset stats/figures | `reference/dataset_analysis.md` | `notebooks/Dataset_Analysis.ipynb`, plots via `src/analysis/*.py` |
+| Compare model performance and ablations | `results/model_performance.md`, `../output/ablation_studies/README.md` | Metrics export in `src/analysis/metric_comparison.py` |
+| Understand design choices | `reference/design_decisions.md` | Training/config rationale referenced from `src/training/*` |
+
+## Common Commands
+
+```bash
+# Standard training run with W&B logging
+python -m src.training.train --model roberta-large --lr 2e-5 --batch-size 16 --epochs 4 --wandb-project GoEmotions_Classification
+
+# Quick CPU sanity check (limits data, disables W&B)
+python -m src.training.train --model distilbert-base --epochs 1 --max-train-samples 500 --max-eval-samples 200 --no-wandb
+```
+
+W&B setup and artifact access: see `guides/wandbguide.md` (covers both local and W&B paths).
+
+## Where results live
+- Final model metrics and tables: `results/model_performance.md`
+- Ablation summaries and links to runs: `../output/ablation_studies/README.md`
+- Slides/report: `../output/submission/Final_Project_Presentation.pdf`, `../output/submission/Final_Project_Report.pdf`
+
+## Maintaining these docs
+- When training configs change, update `guides/replication.md`, `guides/gpu_training.md`, and thresholds/metrics in `results/model_performance.md`.
+- When data processing or figures change, refresh `reference/dataset_analysis.md` and any generated plots.
+- When adding W&B artifacts or file layouts, update `tools/wandb/README.md` and `tools/wandb/file_organization.md`.
 
 ## Quick Navigation
 
@@ -11,103 +51,3 @@ docs/
 ├── results/       # Model performance and findings
 └── tools/         # Tool-specific documentation
 ```
-
-## Documentation by Category
-
-### Guides
-
-How-to instructions for running experiments and reproducing results.
-
-- **`guides/gpu_training.md`** - GPU training setup and execution
-  - Remote GPU instance setup
-  - Repository clone and configuration
-  - W&B authentication with set -a/set +a
-  - Training configurations for different models
-  - Background execution and monitoring
-  - Troubleshooting common GPU issues
-
-- **`guides/replication.md`** - Complete replication guide
-  - Environment setup and dependencies
-  - Running data analysis scripts
-  - Model training procedures
-  - Figure generation
-  - Troubleshooting common issues
-
-### Reference
-
-Technical reference material and design documentation.
-
-- **`reference/dataset_analysis.md`** - Dataset statistics and characteristics
-  - Dataset overview and splits
-  - Multi-label distribution analysis
-  - Per-emotion statistics and imbalance
-  - CSV export specifications
-  - Data file reference
-
-- **`reference/design_decisions.md`** - Design choices and rationales
-  - Data preprocessing decisions (neutral handling, etc.)
-  - Visualization design choices (colors, sizing)
-  - Model architecture selection
-  - Training configuration and hyperparameters
-  - Evaluation metrics and threshold strategies
-
-### Results
-
-Performance metrics and experimental findings.
-
-- **`results/model_performance.md`** - Final trained model metrics
-  - RoBERTa-Large and DistilBERT performance
-  - Model comparison table
-  - Per-emotion performance breakdown
-  - Threshold selection results
-  - W&B run references and checkpoint locations
-
-- **`../output/ablation_studies/README.md`** - Ablation study results
-  - Quick comparison table of all ablations
-  - Individual study results (neutral, loss weighting, thresholds, etc.)
-  - W&B artifact links
-  - Cross-references to design decisions
-
-### Tools
-
-Tool-specific integration documentation.
-
-- **`tools/wandb/`** - Weights & Biases integration
-  - **`README.md`** - Quick start and overview
-  - **`file_organization.md`** - Files tab organization
-  - **`downloading_files.md`** - Download files (UI and API)
-  - **`metrics_guide.md`** - Metrics logging and interpretation
-
-## Documentation Organization
-
-Documentation follows a clear categorization pattern:
-
-- **guides/** - Procedural instructions for running tasks
-- **reference/** - Technical specs and design rationale
-- **results/** - Experimental outcomes and findings
-- **tools/** - Tool integration and workflows
-
-This structure makes it easier to:
-- Navigate to the right documentation quickly
-- Understand the purpose of each document
-- Maintain and update documentation independently
-- Scale documentation as the project grows
-
-## Documentation Standards
-
-All documentation should be:
-- **Practical** - Focus on actionable steps and commands
-- **Complete** - Include prerequisites, setup, execution, and troubleshooting
-- **Tested** - Verify instructions work on a clean environment
-- **Maintained** - Update when workflows or code structure changes
-- **Modular** - Keep related content together, cross-reference when needed
-
-## Contributing to Documentation
-
-When making changes that affect workflows:
-1. Identify which documentation file(s) need updating
-2. Update relevant documentation files
-3. Test instructions from scratch if possible
-4. Include examples and expected outputs
-5. Add troubleshooting for common issues
-6. Update cross-references if adding new sections
