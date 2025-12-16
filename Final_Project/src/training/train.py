@@ -284,6 +284,20 @@ def parse_args() -> argparse.Namespace:
         help='Remove emojis from text before tokenization'
     )
 
+    # Colab configuration
+    colab_group = parser.add_argument_group('Colab Configuration')
+    colab_group.add_argument(
+        '--colab',
+        action='store_true',
+        help='Enable Colab auto-disconnect after training completes (prevents wasted compute units)'
+    )
+    colab_group.add_argument(
+        '--colab-flag',
+        type=str,
+        default='/content/__DISCONNECT__',
+        help='Path to flag file for Colab disconnect signal (default: /content/__DISCONNECT__)'
+    )
+
     args = parser.parse_args()
 
     # Apply max-epochs override if specified
