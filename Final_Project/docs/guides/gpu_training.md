@@ -178,6 +178,18 @@ python -m src.training.train \
 
 ---
 
+## Production Training Commands
+
+**Important:** All commands below include the `--colab` flag for automatic runtime disconnect. This flag works together with the watcher cell (see "Colab Auto-Disconnect Setup" above):
+
+1. **Watcher cell** monitors `/content/__DISCONNECT__` file
+2. **Training command** with `--colab` flag creates the file when training completes
+3. **Automatic disconnect** happens when watcher detects the flag file
+
+If you're **NOT** using Colab, you can safely omit the `--colab` flag - the script will detect non-Colab environments and skip disconnect logic.
+
+---
+
 ## RoBERTa-Large Production Training
 
 **Exact command for production RoBERTa-Large training:**
@@ -188,7 +200,8 @@ python -m src.training.train \
   --lr 2e-5 \
   --batch-size 16 \
   --epochs 10 \
-  --dropout 0.1
+  --dropout 0.1 \
+  --colab
 ```
 
 ---
@@ -203,7 +216,8 @@ python -m src.training.train \
   --lr 3e-5 \
   --batch-size 32 \
   --epochs 10 \
-  --dropout 0.1
+  --dropout 0.1 \
+  --colab
 ```
 
 ---
@@ -271,6 +285,7 @@ python -m src.training.train \
   --seed 42 \
   --wandb-project GoEmotions_Classification \
   --wandb-tags robustness,seed42 \
+  --colab \
   --output-dir artifacts/models/distilbert-seed42
 ```
 
@@ -286,6 +301,7 @@ python -m src.training.train \
   --seed 43 \
   --wandb-project GoEmotions_Classification \
   --wandb-tags robustness,seed43 \
+  --colab \
   --output-dir artifacts/models/distilbert-seed43
 ```
 
@@ -301,6 +317,7 @@ python -m src.training.train \
   --seed 44 \
   --wandb-project GoEmotions_Classification \
   --wandb-tags robustness,seed44 \
+  --colab \
   --output-dir artifacts/models/distilbert-seed44
 ```
 
@@ -322,6 +339,7 @@ python -m src.training.train \
   --loss-type bce \
   --wandb-project GoEmotions_Classification \
   --wandb-tags loss:baseline \
+  --colab \
   --output-dir artifacts/models/distilbert-loss-baseline
 ```
 
@@ -339,6 +357,7 @@ python -m src.training.train \
   --loss-type weighted-bce \
   --wandb-project GoEmotions_Classification \
   --wandb-tags loss:weighted \
+  --colab \
   --output-dir artifacts/models/distilbert-loss-weighted
 ```
 
@@ -357,6 +376,7 @@ python -m src.training.train \
   --focal-gamma 2.0 \
   --wandb-project GoEmotions_Classification \
   --wandb-tags loss:focal \
+  --colab \
   --output-dir artifacts/models/distilbert-loss-focal
 ```
 
@@ -380,6 +400,7 @@ python -m src.training.train \
   --max-seq-length 128 \
   --wandb-project GoEmotions_Classification \
   --wandb-tags seq:128 \
+  --colab \
   --output-dir artifacts/models/distilbert-seq128
 ```
 
@@ -397,6 +418,7 @@ python -m src.training.train \
   --max-seq-length 256 \
   --wandb-project GoEmotions_Classification \
   --wandb-tags seq:256 \
+  --colab \
   --output-dir artifacts/models/distilbert-seq256
 ```
 
@@ -414,6 +436,7 @@ python -m src.training.train \
   --max-seq-length 512 \
   --wandb-project GoEmotions_Classification \
   --wandb-tags seq:512 \
+  --colab \
   --output-dir artifacts/models/distilbert-seq512
 ```
 
