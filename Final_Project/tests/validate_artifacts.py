@@ -337,7 +337,7 @@ class ArtifactValidator:
         logger.info("  artifacts/stats/test_metrics_{model}.json")
         logger.info("\nFigures:")
         logger.info("  output/figures/00_class_distribution.png")
-        logger.info("  output/figures/07_per_emotion_f1_scores.png")
+        logger.info("  output/figures/10_emotion_f1.png")
         logger.info("  ... (see output/figures/ for all visualizations)")
         logger.info("=" * 70)
 

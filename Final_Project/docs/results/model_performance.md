@@ -261,7 +261,7 @@ The model exhibits extremely conservative predictions at the default threshold (
 
 ### Visualization
 
-**Bar Chart:** `output/figures/07_per_emotion_f1_scores.png`
+**Bar Chart:** `output/figures/10_emotion_f1.png`
 
 The visualization shows all 28 emotions ranked by F1 score with color-coded performance:
 - Green: High F1 (>0.5)

@@ -46,7 +46,7 @@ artifacts/stats/
 ```
 output/figures/
 ├── 00_class_distribution.png
-├── 07_per_emotion_f1_scores.png
+├── 10_emotion_f1.png
 └── ... (all visualization PNGs)
 ```
 
@@ -245,7 +245,7 @@ metrics_path = "artifacts/stats/per_class_metrics_roberta-large_20251212-211010.
 json_path = "artifacts/stats/test_metrics_roberta-large.json"
 
 # Figures
-figure_path = "output/figures/07_per_emotion_f1_scores.png"
+figure_path = "output/figures/10_emotion_f1.png"
 
 # Checkpoint
 checkpoint_path = "artifacts/models/roberta/roberta-large-20251212-211010"
