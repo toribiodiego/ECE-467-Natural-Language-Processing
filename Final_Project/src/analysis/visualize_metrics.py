@@ -172,7 +172,7 @@ def plot_percentage_differences(ax, df, decrease_color, increase_color):
         Patch(facecolor=decrease_color, alpha=0.8, label='Decrease'),
         Patch(facecolor=increase_color, alpha=0.8, label='Increase')
     ]
-    ax.legend(handles=legend_elements, loc='lower right', framealpha=0.9)
+    ax.legend(handles=legend_elements, loc='upper left', framealpha=0.9)
 
 
 def plot_auc_vs_f1(ax, df, roberta_color, distilbert_color):
@@ -268,7 +268,7 @@ def plot_macro_vs_micro(ax, df, roberta_color, distilbert_color):
     ax.set_title('Macro vs Micro Metrics', fontsize=12, fontweight='bold', pad=10)
     ax.set_xticks(x)
     ax.set_xticklabels(metric_types)
-    ax.legend(loc='upper right', framealpha=0.9, fontsize=9)
+    ax.legend(loc='upper left', framealpha=0.9, fontsize=9)
     ax.grid(True, alpha=0.3, axis='y')
     ax.set_ylim(0, 1.0)
 
