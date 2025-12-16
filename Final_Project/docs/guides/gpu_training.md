@@ -148,8 +148,6 @@ python -m src.training.train \
   --output-dir artifacts/models/distilbert-seed42
 ```
 
-**Expected training time:** ~20 minutes
-
 ### Seed 43
 
 ```bash
@@ -165,8 +163,6 @@ python -m src.training.train \
   --output-dir artifacts/models/distilbert-seed43
 ```
 
-**Expected training time:** ~20 minutes
-
 ### Seed 44
 
 ```bash
@@ -181,15 +177,6 @@ python -m src.training.train \
   --wandb-tags robustness,seed44 \
   --output-dir artifacts/models/distilbert-seed44
 ```
-
-**Expected training time:** ~20 minutes
-
-**Total time for all 3 seeds:** ~1 hour
-
-**Next steps after training:**
-1. Download test metrics from all 3 runs from W&B
-2. Aggregate metrics to compute mean ± std
-3. Perform statistical significance tests comparing RoBERTa vs DistilBERT
 
 ---
 
@@ -212,8 +199,6 @@ python -m src.training.train \
   --output-dir artifacts/models/distilbert-loss-baseline
 ```
 
-**Expected training time:** ~20 minutes
-
 ### Weighted BCE Loss (Class-Weighted)
 
 Applies inverse frequency weighting to address class imbalance.
@@ -230,8 +215,6 @@ python -m src.training.train \
   --wandb-tags loss:weighted \
   --output-dir artifacts/models/distilbert-loss-weighted
 ```
-
-**Expected training time:** ~20 minutes
 
 ### Focal Loss (γ=2.0)
 
@@ -250,10 +233,6 @@ python -m src.training.train \
   --wandb-tags loss:focal \
   --output-dir artifacts/models/distilbert-loss-focal
 ```
-
-**Expected training time:** ~20 minutes
-
-**Total time for all 3 loss experiments:** ~1 hour
 
 ---
 
@@ -278,8 +257,6 @@ python -m src.training.train \
   --output-dir artifacts/models/distilbert-seq128
 ```
 
-**Expected training time:** ~20 minutes
-
 ### max_seq_length=256
 
 Provides additional context for edge cases.
@@ -296,8 +273,6 @@ python -m src.training.train \
   --wandb-tags seq:256 \
   --output-dir artifacts/models/distilbert-seq256
 ```
-
-**Expected training time:** ~25 minutes (higher VRAM usage)
 
 ### max_seq_length=512
 
@@ -317,8 +292,4 @@ python -m src.training.train \
 ```
 
 **Note:** Reduced batch size to 16 to fit in GPU memory.
-
-**Expected training time:** ~35 minutes (high VRAM usage)
-
-**Total time for all 3 sequence experiments:** ~1.5 hours
 
