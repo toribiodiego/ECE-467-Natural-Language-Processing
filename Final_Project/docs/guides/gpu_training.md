@@ -271,7 +271,7 @@ python -m src.training.train \
 
 **Objective:** Train DistilBERT with 3 different random seeds to quantify variance for statistical significance testing.
 
-### Seed 42
+### Seed 13
 
 ```bash
 python -m src.training.train \
@@ -280,14 +280,14 @@ python -m src.training.train \
   --batch-size 32 \
   --epochs 10 \
   --dropout 0.1 \
-  --seed 42 \
+  --seed 13 \
   --wandb-project GoEmotions_Classification \
-  --wandb-tags robustness,seed42 \
+  --wandb-tags robustness,seed13 \
   --colab \
-  --output-dir artifacts/models/distilbert-seed42
+  --output-dir artifacts/models/distilbert-seed13
 ```
 
-### Seed 43
+### Seed 23
 
 ```bash
 python -m src.training.train \
@@ -296,14 +296,14 @@ python -m src.training.train \
   --batch-size 32 \
   --epochs 10 \
   --dropout 0.1 \
-  --seed 43 \
+  --seed 23 \
   --wandb-project GoEmotions_Classification \
-  --wandb-tags robustness,seed43 \
+  --wandb-tags robustness,seed23 \
   --colab \
-  --output-dir artifacts/models/distilbert-seed43
+  --output-dir artifacts/models/distilbert-seed23
 ```
 
-### Seed 44
+### Seed 0
 
 ```bash
 python -m src.training.train \
@@ -312,11 +312,11 @@ python -m src.training.train \
   --batch-size 32 \
   --epochs 10 \
   --dropout 0.1 \
-  --seed 44 \
+  --seed 0 \
   --wandb-project GoEmotions_Classification \
-  --wandb-tags robustness,seed44 \
+  --wandb-tags robustness,seed0 \
   --colab \
-  --output-dir artifacts/models/distilbert-seed44
+  --output-dir artifacts/models/distilbert-seed0
 ```
 
 ---
