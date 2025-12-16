@@ -1,0 +1,21 @@
+combination,combo_size,frequency,exact_match_count,exact_match_rate,partial_match_count,partial_match_rate,mean_jaccard,median_jaccard
+anger + annoyance,2,26,0,0.0,0,0.0,0.0,0.0
+admiration + gratitude,2,26,0,0.0,24,0.9230769230769231,0.46153846153846156,0.5
+approval + neutral,2,23,0,0.0,10,0.43478260869565216,0.21739130434782608,0.0
+curiosity + neutral,2,22,0,0.0,12,0.5454545454545454,0.2727272727272727,0.5
+annoyance + neutral,2,22,0,0.0,6,0.2727272727272727,0.13636363636363635,0.0
+annoyance + disapproval,2,19,0,0.0,0,0.0,0.0,0.0
+confusion + curiosity,2,19,0,0.0,4,0.21052631578947367,0.10526315789473684,0.0
+admiration + love,2,18,1,0.05555555555555555,14,0.7777777777777778,0.4166666666666667,0.5
+admiration + approval,2,16,0,0.0,7,0.4375,0.21875,0.0
+disappointment + sadness,2,16,0,0.0,0,0.0,0.0,0.0
+annoyance + disgust,2,12,0,0.0,0,0.0,0.0,0.0
+admiration + joy,2,11,0,0.0,5,0.45454545454545453,0.22727272727272727,0.0
+neutral + realization,2,10,0,0.0,4,0.4,0.2,0.0
+approval + caring,2,10,0,0.0,0,0.0,0.0,0.0
+annoyance + disappointment,2,10,0,0.0,0,0.0,0.0,0.0
+admiration + neutral,2,10,0,0.0,5,0.5,0.25,0.25
+approval + optimism,2,10,0,0.0,2,0.2,0.1,0.0
+disapproval + neutral,2,9,0,0.0,4,0.4444444444444444,0.2222222222222222,0.0
+amusement + approval,2,9,0,0.0,5,0.5555555555555556,0.2777777777777778,0.5
+disappointment + neutral,2,9,0,0.0,3,0.3333333333333333,0.16666666666666666,0.0

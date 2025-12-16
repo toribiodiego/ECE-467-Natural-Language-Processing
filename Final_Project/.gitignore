@@ -23,6 +23,7 @@ env/
 
 # Data files (if large datasets)
 *.csv
+!artifacts/stats/cooccurrence/*.csv
 *.parquet
 data/
 datasets/
@@ -55,9 +56,13 @@ output/**/*
 artifacts/**/*
 !artifacts/**/.gitkeep
 !artifacts/**/README.md
+!artifacts/stats/
+!artifacts/stats/cooccurrence/
+!artifacts/stats/cooccurrence/*
 
 # Generated figures
 *.png
+!artifacts/stats/cooccurrence/*.png
 *.jpg
 
 # Exception: Track key portfolio figures for GitHub display
@@ -67,6 +72,7 @@ artifacts/**/*
 !output/figures/13_threshold_f1.png
 !output/figures/17_reliability_diagram.png
 !output/figures/18_calibration_summary.png
+!output/figures/19_cooccurrence_heatmap.png
 *.jpeg
 *.gif
 *.svg
