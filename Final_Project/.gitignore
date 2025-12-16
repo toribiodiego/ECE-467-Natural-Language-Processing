@@ -59,6 +59,14 @@ artifacts/**/*
 # Generated figures
 *.png
 *.jpg
+
+# Exception: Track key portfolio figures for GitHub display
+!output/figures/00_class_distribution.png
+!output/figures/10_emotion_f1.png
+!output/figures/11_threshold_macro.png
+!output/figures/13_threshold_f1.png
+!output/figures/17_reliability_diagram.png
+!output/figures/18_calibration_summary.png
 *.jpeg
 *.gif
 *.svg
