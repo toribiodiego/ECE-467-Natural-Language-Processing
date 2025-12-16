@@ -212,7 +212,7 @@ def plot_auc_vs_f1(ax, df, roberta_color, distilbert_color):
     ax.set_ylabel('F1 Score (micro)', fontsize=11, fontweight='bold')
     ax.set_title('AUC vs F1 Trade-off', fontsize=12, fontweight='bold', pad=10)
     ax.grid(True, alpha=0.3)
-    ax.legend(loc='lower right', framealpha=0.9)
+    ax.legend(loc='lower right', framealpha=0.9, markerscale=0.5)
 
     # Set axis limits with padding
     ax.set_xlim(0.85, 0.92)
