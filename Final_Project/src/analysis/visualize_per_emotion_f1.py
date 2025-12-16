@@ -23,9 +23,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Use a clean, professional style
-plt.style.use('seaborn-v0_8-darkgrid')
-
 
 def load_per_emotion_scores(csv_path: str) -> pd.DataFrame:
     """Load per-emotion scores from CSV.
@@ -108,8 +105,17 @@ def create_f1_bar_chart(df: pd.DataFrame, output_path: str):
     # Add grid
     ax.grid(True, alpha=0.3, axis='x')
 
-    # Add legend
-    ax.legend(loc='lower right', framealpha=0.9)
+    # Add legend in top right
+    ax.legend(loc='upper right', framealpha=0.9)
+
+    # Add colorbar to show F1 score scale
+    from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import Normalize
+    sm = ScalarMappable(cmap=plt.cm.RdYlGn, norm=Normalize(vmin=0, vmax=max_f1))
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, pad=0.02, aspect=30)
+    cbar.set_label('F1 Score', fontsize=10, fontweight='bold')
+    cbar.ax.tick_params(labelsize=8)
 
     # Tight layout
     plt.tight_layout()
