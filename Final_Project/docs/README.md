@@ -62,7 +62,7 @@ Performance metrics and experimental findings.
   - Threshold selection results
   - W&B run references and checkpoint locations
 
-- **`../ablation_studies/README.md`** - Ablation study results
+- **`../output/ablation_studies/README.md`** - Ablation study results
   - Quick comparison table of all ablations
   - Individual study results (neutral, loss weighting, thresholds, etc.)
   - W&B artifact links

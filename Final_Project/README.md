@@ -19,23 +19,29 @@ Each model was fine-tuned and optimized using systematic hyperparameter sweeps w
 
 ```
 .
-├── Dataset_Analysis.ipynb
-├── Final_Project.ipynb
-├── Final_Project_Presentation.pdf
-├── Final_Project_Report.pdf
+├── notebooks/
+│   ├── Dataset_Analysis.ipynb
+│   └── Final_Project.ipynb
+├── output/
+│   ├── submission/
+│   │   ├── Final_Project_Presentation.pdf
+│   │   └── Final_Project_Report.pdf
+│   └── ablation_studies/
+├── scripts/
+├── src/
 └── README.md
 ```
 
-- **`Dataset_Analysis.ipynb`**  
+- **`notebooks/Dataset_Analysis.ipynb`**
   - Exploratory analysis of the GoEmotions dataset, including label distributions, tokenization statistics, and co-occurrence of emotion labels.
 
-- **`Final_Project.ipynb`**
+- **`notebooks/Final_Project.ipynb`**
   - Full implementation of model training, validation, and testing pipelines. Includes hyperparameter tuning, multi-label classification setup, and model evaluations.
 
-- **`Final_Project_Presentation.pdf`**  
+- **`output/submission/Final_Project_Presentation.pdf`**
   - Slides summarizing the project goals, methodology, key results, and conclusions.
 
-- **`Final_Project_Report.pdf`**  
+- **`output/submission/Final_Project_Report.pdf`**
   - Comprehensive report detailing the dataset, methods, experiments, and complete findings from the project.
 
 ### Results

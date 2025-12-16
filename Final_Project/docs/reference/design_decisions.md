@@ -188,7 +188,7 @@ The following hyperparameters will be studied in ablation experiments:
 - Loss weighting: {None, class-weighted, focal}
 - Threshold strategies: {global, per-label, top-k}
 
-See `ablation_studies/README.md` for results and analysis.
+See `../../output/ablation_studies/README.md` for results and analysis.
 
 ### Checkpoint Saving Strategy
 

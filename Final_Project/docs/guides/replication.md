@@ -228,14 +228,13 @@ Test,84.6,14.3,1.2,5427
 
 #### Using the Notebook (Alternative)
 
-You can also run the original notebook script:
+You can also run the standalone script:
 
 ```bash
-cd notebooks
-python calculate_multilabel_stats.py
+python scripts/calculate_multilabel_stats.py
 ```
 
-This produces the same results but saves to `notebooks/multi_label_stats.csv` instead.
+This produces the same results but saves to the current directory as `multi_label_stats.csv`.
 
 ### Class Distribution Visualizations
 

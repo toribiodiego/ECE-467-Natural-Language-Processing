@@ -37,7 +37,7 @@ This section will contain a summary of all trained models, their configurations,
 
 **See Also:**
 - `design_decisions.md#evaluation-metrics` - Complete metric selection rationale
-- `ablation_studies/README.md` - Threshold optimization experiments
+- `../output/ablation_studies/README.md` - Threshold optimization experiments
 
 ---
 
@@ -309,7 +309,7 @@ Different threshold strategies evaluated:
 
 **Performance Impact:** [TO BE ADDED]
 
-**See:** `ablation_studies/README.md#threshold-strategy-ablation` for detailed ablation results
+**See:** `../output/ablation_studies/README.md#threshold-strategy-ablation` for detailed ablation results
 
 ---
 
