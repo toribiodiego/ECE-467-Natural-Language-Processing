@@ -5,6 +5,8 @@ This directory contains large binary files that should not be committed to versi
 ## Subdirectories
 
 - `models/` - Trained model checkpoints (.pt, .pth, .ckpt files)
+- `predictions/` - Model prediction CSVs (validation and test sets)
+- `stats/` - Per-class metrics, evaluation statistics, and analysis results
 
 ## Usage
 
@@ -30,6 +32,30 @@ import torch
 model_path = "artifacts/models/roberta-large-best.pt"
 model.load_state_dict(torch.load(model_path))
 ```
+
+### Generating Predictions
+
+Export predictions from checkpoints using the export script:
+
+```bash
+python -m src.training.export_predictions \
+  --checkpoint artifacts/models/roberta/roberta-large-20251212-211010 \
+  --output artifacts/predictions/
+```
+
+This creates timestamped CSV files with predictions for validation and test sets.
+
+### Exporting Per-Class Metrics
+
+Export per-class metrics (precision, recall, F1) from checkpoints:
+
+```bash
+python -m src.analysis.export_per_class_metrics \
+  --checkpoint artifacts/models/roberta/roberta-large-20251212-211010 \
+  --output artifacts/stats/per_class_metrics.csv
+```
+
+This generates a ranked CSV showing model performance for each emotion.
 
 ## Important Notes
 
