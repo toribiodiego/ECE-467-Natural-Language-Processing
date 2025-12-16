@@ -48,7 +48,7 @@ All Python dependencies are specified in `requirements.txt` and installed automa
 - `matplotlib==3.7.2` - Visualization
 - `jupyter==1.0.0` - Notebook environment
 
-**Optional:** Weights & Biases for experiment tracking (see `w_and_b_guide.md` for setup instructions)
+**Optional:** Weights & Biases for experiment tracking (see `docs/tools/wandb/README.md` for setup instructions)
 
 ---
 
@@ -537,7 +537,7 @@ The `Final_Project.ipynb` notebook contains the complete training pipeline:
    - Confusion matrix analysis
 6. **Checkpoint Saving:**
    - Best model saved to `artifacts/models/`
-   - Optional: Upload to Weights & Biases (see `w_and_b_guide.md` for setup)
+   - Optional: Upload to Weights & Biases (see `docs/tools/wandb/README.md` for setup)
 
 ### Hyperparameters
 
@@ -575,6 +575,15 @@ The `Final_Project.ipynb` notebook contains the complete training pipeline:
 - Training time: ~1-2 hours on T4 GPU
 - Model size: ~260MB
 
+### Threshold strategies
+
+The training script supports multiple thresholding modes for multi-label predictions:
+- `--threshold-strategy global --threshold 0.5` (default): one threshold for all labels.
+- `--threshold-strategy per_class`: searches per-label thresholds.
+- `--threshold-strategy top_k --top-k 1`: picks the top K labels per sample.
+
+Pick the strategy that matches your evaluation in `results/model_performance.md` or ablations.
+
 ### Saving Model Checkpoints
 
 Models are saved automatically to `artifacts/models/`:
@@ -599,7 +608,7 @@ artifacts/
         └── tokenizer files
 ```
 
-**For W&B integration:** See `w_and_b_guide.md` for instructions on logging metrics, uploading artifacts, and retrieving results from cloud storage.
+**For W&B integration:** See `docs/tools/wandb/README.md` (setup/logging), `docs/tools/wandb/metrics_guide.md`, and `docs/tools/wandb/downloading_files.md`.
 
 ### Loading Saved Models
 
@@ -702,205 +711,47 @@ This is useful for identifying which emotions need improvement and understanding
 
 ## Figure Generation
 
-### Class Distribution Figure
+Regenerate figures via these scripts (dataset caching keeps reruns fast):
 
-**Status:** To be implemented in Phase 3 (Task 13)
+- **Class distribution (with/without neutral):**
+  ```bash
+  python -m src.visualization.class_distribution
+  ```
+  Outputs: `output/figures/class_distribution_stacked.png`, `output/figures/class_distribution_stacked_no_neutral.png`, plus CSVs in `output/stats/`.
 
-This figure will show:
-- Main plot: 27 emotion frequencies sorted by frequency
-- Inset: Multi-label distribution (1 label, 2 labels, 3+ labels)
+- **Label co-occurrence heatmap:**
+  ```bash
+  python -m src.visualization.label_cooccurrence
+  ```
+  Outputs: `output/figures/label_cooccurrence_heatmap.png` (if enabled) and `output/stats/label_cooccurrence.csv`.
 
-**Expected output location:** `output/figures/01-class-distribution-enhanced.png`
+- **Metric comparison plots (RoBERTa vs DistilBERT):**
+  ```bash
+  python -m src.analysis.visualize_metrics \
+    --metrics-csv artifacts/stats/metric_summary.csv \
+    --output-dir output/figures
+  ```
+  Generates `metric_comparison_bars.png`, `percentage_differences.png`, `auc_vs_f1_tradeoff.png`, `macro_vs_micro.png`.
 
-### Per-Emotion Performance Figure
+- **Per-emotion F1 bar chart:**
+  ```bash
+  python -m src.analysis.visualize_per_emotion_f1 \
+    --input artifacts/stats/per_emotion_scores.csv \
+    --output output/figures/per_emotion_f1_chart.png
+  ```
 
-**Status:** To be implemented in Phase 3 (Task 14)
-
-This figure will show:
-- Top 5 best performing emotions by F1 score
-- Bottom 5 worst performing emotions by F1 score
-
-**Expected output location:** `output/figures/02-per-emotion-performance.png`
-
-### Generating Figures
-
-```bash
-# To be implemented
-python -m src.visualization.generate_figures
-
-# Or from notebook:
-jupyter notebook notebooks/Final_Project.ipynb
-# Run cells in "Visualization" section
-```
+Notebook alternative: run visualization cells in `notebooks/Final_Project.ipynb`.
 
 ---
 
 ## Troubleshooting
 
-### Common Issues and Solutions
+Quick checks:
+- Confirm virtualenv is active (`which python` points to `venv`).
+- If training fails, try the smoke test first; if it passes, the issue is usually config/data.
+- See the appendix for detailed error messages, fixes, and expected outputs.
 
-#### 1. Python Version Incompatibility
-
-**Error:**
-```
-ERROR: No matching distribution found for torch==2.0.1
-```
-
-**Cause:** Python 3.11+ is not compatible with torch==2.0.1
-
-**Solution:**
-```bash
-# Update .env to use Python 3.10
-echo "PYTHON_CMD=python3.10" >> .env
-
-# Remove existing venv and rerun setup
-rm -rf venv
-./setup.sh
-```
-
-#### 2. PyArrow Compatibility Error
-
-**Error:**
-```
-AttributeError: module 'pyarrow' has no attribute 'PyExtensionType'
-```
-
-**Cause:** Incompatible pyarrow version with datasets library
-
-**Solution:**
-This is already fixed in `requirements.txt` with `pyarrow==12.0.1`. If you still encounter this:
-
-```bash
-source venv/bin/activate
-pip install pyarrow==12.0.1
-```
-
-#### 3. Dataset Download Failure
-
-**Error:**
-```
-ConnectionError: Failed to download GoEmotions dataset
-```
-
-**Causes:**
-- No internet connection
-- HuggingFace Hub is down
-- Firewall blocking requests
-
-**Solutions:**
-
-1. **Check internet connection:**
-   ```bash
-   ping huggingface.co
-   ```
-
-2. **Clear cache and retry:**
-   ```bash
-   rm -rf ~/.cache/huggingface/datasets/go_emotions
-   python -m src.data.multilabel_stats
-   ```
-
-3. **Use cached dataset:** If you've downloaded before, dataset should be cached locally
-
-4. **Manual download:** Download from https://huggingface.co/datasets/go_emotions
-
-#### 4. CUDA/GPU Not Available
-
-**Error:**
-```
-RuntimeError: CUDA out of memory
-```
-
-**Solutions:**
-
-1. **Reduce batch size:**
-   ```python
-   # In notebook
-   batch_size = 8  # Instead of 16 or 32
-   ```
-
-2. **Use gradient accumulation:**
-   ```python
-   gradient_accumulation_steps = 2
-   effective_batch_size = batch_size * gradient_accumulation_steps
-   ```
-
-3. **Use smaller model:**
-   - Switch from RoBERTa-Large to DistilBERT
-   - DistilBERT uses 75% less memory
-
-4. **Use Google Colab:**
-   - Free GPU available
-   - No local setup required
-
-#### 5. Module Not Found Errors
-
-**Error:**
-```
-ModuleNotFoundError: No module named 'src'
-```
-
-**Cause:** Running from wrong directory or virtual environment not activated
-
-**Solution:**
-```bash
-# Ensure you're in project root
-cd /path/to/Final_Project
-
-# Activate virtual environment
-source venv/bin/activate
-
-# Verify you're in the right directory
-pwd
-# Should show: /path/to/Final_Project
-
-# Run module
-python -m src.data.multilabel_stats
-```
-
-#### 6. Permission Denied on setup.sh
-
-**Error:**
-```
-bash: ./setup.sh: Permission denied
-```
-
-**Solution:**
-```bash
-chmod +x setup.sh
-./setup.sh
-```
-
-#### 7. Output Directory Not Found
-
-**Error:**
-```
-FileNotFoundError: [Errno 2] No such file or directory: 'output/stats/'
-```
-
-**Cause:** Output directories are gitignored and may not exist
-
-**Solution:**
-The code creates directories automatically via `os.makedirs(os.path.dirname(output_path), exist_ok=True)`. If this fails:
-
-```bash
-mkdir -p output/stats output/figures output/reports
-```
-
-### Getting Help
-
-If you encounter issues not covered here:
-
-1. **Check logs:** Look for detailed error messages in console output
-2. **Verify environment:**
-   ```bash
-   python --version
-   pip list | grep -E "datasets|transformers|torch"
-   ```
-3. **Search issues:** Check GitHub issues for similar problems
-4. **Open issue:** Include full error trace and environment details
-
----
+For full issue-by-issue guidance, jump to [Appendix: Expected Outputs & Logs](#appendix-expected-outputs--logs).
 
 ## Additional Resources
 
@@ -970,10 +821,102 @@ du -sh output/ artifacts/ venv/
 
 ---
 
+## Appendix: Expected Outputs & Logs
+
+### Smoke test outputs and checks
+
+Verify artifacts after the CPU smoke test:
+
+```bash
+# Check directories
+ls -lh artifacts/models/
+ls -lh artifacts/predictions/
+ls -lh artifacts/stats/
+
+# Validate row counts
+wc -l artifacts/predictions/val_epoch1_predictions_*.csv   # expect 26 (25 + header)
+wc -l artifacts/predictions/test_predictions_*.csv         # expect 26 (25 + header)
+wc -l artifacts/stats/per_class_metrics_*.csv              # expect 29 (28 + header)
+```
+
+If files are missing, rerun the smoke test and check permissions on `artifacts/`.
+
+### Smoke test issues (common)
+
+- **CUDA out of memory on CPU-only machine:**  
+  `python -m src.training.train --model distilbert-base --epochs 1 --batch-size 2 --no-wandb --max-train-samples 20 --max-eval-samples 10`
+
+- **`artifacts/` not found:**  
+  `mkdir -p artifacts/models artifacts/predictions artifacts/stats` then rerun.
+
+- **Predictions CSVs missing:**  
+  Ensure dataset loads correctly:  
+  ```python
+  from src.data.load_dataset import load_go_emotions
+  dataset = load_go_emotions()
+  print(hasattr(dataset['validation'], 'texts'))  # Should be True
+  ```
+
+- **Checkpoint not found after training:**  
+  ```bash
+  find artifacts/models -name "distilbert-base-*" -type d
+  ls artifacts/models/distilbert-base-*/
+  ```
+
+- **Import/module errors:** confirm venv + repo root:  
+  ```bash
+  cd /path/to/Final_Project
+  source venv/bin/activate
+  which python
+  python -m src.training.train --model distilbert-base --epochs 1 --batch-size 4 --no-wandb --max-train-samples 50 --max-eval-samples 25
+  ```
+
+### Detailed troubleshooting
+
+1) **Python version incompatibility**  
+   Error: `No matching distribution found for torch==2.0.1` (Python 3.11+)  
+   Fix: `echo "PYTHON_CMD=python3.10" >> .env && rm -rf venv && ./setup.sh`
+
+2) **PyArrow compatibility error**  
+   Error: `module 'pyarrow' has no attribute 'PyExtensionType'`  
+   Fix: `source venv/bin/activate && pip install pyarrow==12.0.1`
+
+3) **Dataset download failure**  
+   Check connectivity, then:  
+   ```bash
+   rm -rf ~/.cache/huggingface/datasets/go_emotions
+   python -m src.data.multilabel_stats
+   ```  
+   If blocked, download from https://huggingface.co/datasets/go_emotions.
+
+4) **CUDA/GPU not available or OOM**  
+   Reduce batch size, use gradient accumulation, or switch to DistilBERT. Colab GPU is an option if local GPU is limited.
+
+5) **ModuleNotFoundError: src**  
+   Activate venv and run from repo root:  
+   ```bash
+   cd /path/to/Final_Project
+   source venv/bin/activate
+   python -m src.data.multilabel_stats
+   ```
+
+6) **Permission denied on setup.sh**  
+   `chmod +x setup.sh && ./setup.sh`
+
+7) **Output directory not found**  
+   Create gitignored outputs if auto-creation fails:  
+   `mkdir -p output/stats output/figures output/reports`
+
+### Getting help
+
+If issues persist: check logs, verify `python --version` and key packages, search existing issues, or open a new issue with full trace and environment details.
+
+---
+
 ## Related Documentation
 
 - **`dataset_analysis.md`** - Comprehensive dataset statistics and analysis
-- **`w_and_b_guide.md`** - Weights & Biases setup, logging, and artifact management
+- **`docs/tools/wandb/README.md`** - Weights & Biases setup, logging, and artifact management
 - **`model_performance.md`** - Model results and performance metrics
 - **`design_decisions.md`** - Design rationale and implementation choices
 

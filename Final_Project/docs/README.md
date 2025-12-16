@@ -5,16 +5,18 @@ Docs for the GoEmotions emotion classification project. Use this as the landing 
 ## Start Here
 - Reproduce everything end-to-end: `guides/replication.md`
 - Train on a GPU machine: `guides/gpu_training.md`
-- W&B integration and local artifact access: `guides/wandbguide.md`
+- W&B integration and artifact access: `guides/wandbguide.md` and `tools/wandb/README.md`
 - Just want the metrics: `results/model_performance.md` and `../output/ablation_studies/README.md`
-- Explore the analysis and training notebooks: `notebooks/Dataset_Analysis.ipynb`, `notebooks/Final_Project.ipynb`
+- Explore notebooks:
+  - `notebooks/Dataset_Analysis.ipynb` for dataset stats/visuals
+  - `notebooks/Final_Project.ipynb` for full training/evaluation pipeline
 
 ## Tasks → Where to go
 
 | Task | Doc(s) | Code entry points |
 | --- | --- | --- |
 | Run full pipeline on a fresh machine | `guides/replication.md` | `python -m src.training.train ...`; data helpers in `src/data/load_dataset.py` |
-| Train on a remote/local GPU with W&B | `guides/gpu_training.md`, `guides/wandbguide.md` | `src/training/train.py`, `src/training/wandb_utils.py` |
+| Train on a remote/local GPU with W&B | `guides/gpu_training.md`, `tools/wandb/README.md` | `src/training/train.py`, `src/training/wandb_utils.py` |
 | Access artifacts locally (no W&B) | `guides/wandbguide.md`, `artifacts/README.md` | Export scripts in `src/training/`, `src/analysis/` |
 | Inspect dataset stats/figures | `reference/dataset_analysis.md` | `notebooks/Dataset_Analysis.ipynb`, plots via `src/analysis/*.py` |
 | Compare model performance and ablations | `results/model_performance.md`, `../output/ablation_studies/README.md` | Metrics export in `src/analysis/metric_comparison.py` |

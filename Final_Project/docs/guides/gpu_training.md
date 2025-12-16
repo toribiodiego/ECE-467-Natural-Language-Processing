@@ -1,57 +1,47 @@
 # GPU Training Guide
 
-This guide covers setting up and running model training on a remote GPU instance.
+Run training on a remote or local GPU. For full end-to-end replication (including CPU smoke tests), see `docs/guides/replication.md`.
 
-## Detailed Setup Instructions
+## Table of Contents
+1. [Clone & prerequisites](#clone--prerequisites)
+2. [Setup & dependencies](#setup--dependencies)
+3. [Configure Weights & Biases](#configure-weights--biases)
+4. [Activate venv & verify GPU](#activate-venv--verify-gpu)
+5. [Run training commands](#run-training-commands)
 
-### Step 1: Clone Repository
-
-Clone the repository and navigate to the project directory:
+## Clone & prerequisites
 
 ```bash
 git clone https://github.com/toribiodiego/ECE-467-Natural-Language-Processing.git
 cd ECE-467-Natural-Language-Processing/Final_Project
 ```
 
-**Verify you're in the correct directory:**
-```bash
-ls
-# Should show: README.md, setup.sh, src/, tests/, docs/, etc.
-```
+Verify you're in the project root (should contain `README.md`, `setup.sh`, `src/`, `docs/`, etc.).
 
-### Step 2: Run Setup Script
+## Setup & dependencies
 
-The setup script creates a virtual environment, installs dependencies, and downloads the dataset.
+Run the automated setup (same as replication guide):
 
 ```bash
 chmod +x setup.sh
 ./setup.sh
 ```
 
-**Expected output:**
-```
-Creating virtual environment...
-Installing dependencies...
-Downloading GoEmotions dataset...
-Setup complete!
+This creates `venv/`, installs requirements, and caches the GoEmotions dataset if possible. For detailed steps, see `docs/guides/replication.md#environment-setup`.
 
-GPU available: True
-GPU count: 1
-GPU name: NVIDIA A100-SXM4-40GB
-```
+## Configure Weights & Biases
 
-### Step 3: Configure Weights & Biases
-
-Create a `.env` file with your W&B API key:
+Create `.env` with your W&B API key (and any entity/project overrides if desired):
 
 ```bash
 cat > .env << 'EOF'
 WANDB_API_KEY=your_api_key_here
+WANDB_PROJECT=GoEmotions_Classification
+# WANDB_ENTITY=your_team_or_username   # optional
 EOF
 ```
 
-
-**Load environment variables:**
+Load the env vars before training:
 
 ```bash
 set -a
@@ -59,63 +49,40 @@ source .env
 set +a
 ```
 
-**What this does:**
-- `set -a` - Automatically export all variables
-- `source .env` - Load variables from .env file
-- `set +a` - Disable automatic export
+See `docs/tools/wandb/README.md` for login, artifact handling, and metrics conventions.
 
-**Verify W&B is configured:**
-```bash
-wandb login
-# Should show: "Already logged in to Weights & Biases"
-```
-
-### Step 4: Activate Virtual Environment
+## Activate venv & verify GPU
 
 ```bash
 source venv/bin/activate
-```
-
-Your prompt should now show `(venv)` prefix.
-
-**Verify installation:**
-```bash
 python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}')"
 ```
 
-Expected output:
-```
-PyTorch: 2.0.1+cu118
-CUDA available: True
-```
+Expect `CUDA available: True` on a GPU machine.
 
-### Step 5: Start Training
+## Run training commands
 
-## RoBERTa-Large Production Training
+Recommended runs (use `--wandb-project`/`--wandb-entity` as needed):
 
-**Exact command for production RoBERTa-Large training:**
+- **RoBERTa-Large (best performance):**
+  ```bash
+  python -m src.training.train \
+    --model roberta-large \
+    --lr 2e-5 \
+    --batch-size 16 \
+    --epochs 4 \
+    --dropout 0.1
+  ```
 
-```bash
-python -m src.training.train \
-  --model roberta-large \
-  --lr 2e-5 \
-  --batch-size 16 \
-  --epochs 10 \
-  --dropout 0.1
-```
+- **DistilBERT (best efficiency):**
+  ```bash
+  python -m src.training.train \
+    --model distilbert-base \
+    --lr 3e-5 \
+    --batch-size 32 \
+    --epochs 4 \
+    --dropout 0.1
+  ```
 
----
-
-## DistilBERT Efficiency Baseline Training
-
-**Exact command for DistilBERT efficiency baseline:**
-
-```bash
-python -m src.training.train \
-  --model distilbert-base \
-  --lr 3e-5 \
-  --batch-size 32 \
-  --epochs 10 \
-  --dropout 0.1
-```
-
+Thresholding options (multi-label):  
+`--threshold-strategy global --threshold 0.5` (default), `per_class` (search per label), or `top_k` with `--top-k`. Match the strategy used in `docs/results/model_performance.md` when comparing results.

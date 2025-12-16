@@ -274,7 +274,7 @@ The visualization shows all 28 emotions ranked by F1 score with color-coded perf
 - `artifacts/stats/per_emotion_scores.csv` - Basic metrics
 - `artifacts/stats/per_emotion_scores_annotated.csv` - With top/bottom annotations
 
-**W&B Artifact:** [TO BE UPLOADED - Task 04 remaining]
+**W&B Artifact:** Included in W&B run `a71b9ddo` (Cooper-Union/GoEmotions_Classification); see Model Artifacts below for contents (checkpoint, validation/test predictions, per-class metrics).
 
 **See Also:**
 - `design_decisions.md#evaluation-metrics` for metric selection rationale
@@ -286,28 +286,13 @@ The visualization shows all 28 emotions ranked by F1 score with color-coded perf
 
 ### Strategy Comparison
 
-Different threshold strategies evaluated:
-
-1. **Global Threshold (0.5):**
-   - Metrics: [TO BE ADDED]
-   - Pros/Cons: [TO BE ADDED]
-
-2. **Per-Label Threshold (Optimized):**
-   - Metrics: [TO BE ADDED]
-   - Thresholds per emotion: [TO BE ADDED]
-   - Pros/Cons: [TO BE ADDED]
-
-3. **Top-K Selection:**
-   - Metrics: [TO BE ADDED]
-   - Pros/Cons: [TO BE ADDED]
+Reported metrics in this document use the **global threshold of 0.5** (training default). Per-label threshold searches and top-k selection are available in the code (`--threshold-strategy per_class` or `top_k`), and comparative results are tracked in `../output/ablation_studies/README.md` when available.
 
 ### Selected Strategy
 
-**Final Choice:** [TO BE ADDED]
-
-**Rationale:** [TO BE ADDED]
-
-**Performance Impact:** [TO BE ADDED]
+**Final Choice:** Global threshold (0.5) for reported runs in this doc.  
+**Rationale:** Matches training defaults, keeps results directly comparable to baseline runs, and favors precision. Per-label optimization is expected to improve recall; run a per-class search when optimizing for F1.  
+**Performance Impact:** Baseline metrics above use this global threshold; per-label or top-k strategies should be validated and documented in ablation results before adoption.
 
 **See:** `../output/ablation_studies/README.md#threshold-strategy-ablation` for detailed ablation results
 
