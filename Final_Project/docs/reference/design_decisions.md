@@ -9,6 +9,7 @@ This document records key design decisions made throughout the project, includin
 3. [Model Architecture](#model-architecture)
 4. [Training Configuration](#training-configuration)
 5. [Evaluation Metrics](#evaluation-metrics)
+6. [Classification Thresholds](#classification-thresholds)
 
 ---
 
@@ -386,6 +387,91 @@ The following design decisions are pending and will be documented after ablation
 ### Model Ensemble
 - Whether to ensemble RoBERTa-Large and DistilBERT
 - Potential performance gains vs. increased complexity
+
+---
+
+## Classification Thresholds
+
+### Optimal Threshold Selection
+
+**Decision:** Use a global threshold of 0.1 for RoBERTa-Large predictions on the validation set, with per-class threshold optimization available for deployment scenarios.
+
+**Rationale:**
+
+The default 0.5 threshold commonly used for binary classification is suboptimal for multi-label emotion classification with highly imbalanced classes. Analysis of RoBERTa-Large validation predictions revealed:
+
+**Problem with 0.5 Threshold:**
+- Only 8 out of 28 emotions were predicted (71% of emotions had zero predictions)
+- Macro F1 score: 0.133
+- Many rare emotions (fear, grief, embarrassment, desire) never surpassed 0.5 probability
+- Model outputs lower confidence scores for rare classes even when they are present
+
+**Threshold Sweep Analysis:**
+
+Evaluated thresholds from 0.1 to 0.9 on validation set (5,426 samples):
+
+| Threshold | Macro F1 | Micro F1 | Labels Predicted |
+|-----------|----------|----------|------------------|
+| 0.1       | 0.253    | 0.491    | 19/28 (68%)      |
+| 0.2       | 0.234    | 0.515    | 13/28 (46%)      |
+| 0.3       | 0.190    | 0.490    | 13/28 (46%)      |
+| 0.4       | 0.157    | 0.459    | 9/28 (32%)       |
+| 0.5       | 0.133    | 0.403    | 8/28 (29%)       |
+
+**Optimal Global Threshold: 0.1**
+- Macro F1: 0.253 (89% improvement over 0.5)
+- Micro F1: 0.491 (22% improvement)
+- Recall (Macro): 0.307 vs. 0.113 at 0.5 threshold
+- Enables prediction of 19 out of 28 emotions (vs. 8 at 0.5)
+
+**Trade-offs:**
+- Lower threshold increases false positives (precision drops from 0.696 to 0.240)
+- However, in emotion classification, missing rare emotions (false negatives) is more problematic than occasional false positives
+- The macro F1 improvement indicates better balance across all emotion classes
+
+**Per-Class Optimal Thresholds:**
+
+For production deployment, per-class thresholds can be used:
+
+**High-Performing Emotions (threshold 0.2-0.3):**
+- gratitude: 0.30 (F1=0.899)
+- amusement: 0.20 (F1=0.761)
+- love: 0.20 (F1=0.746)
+- neutral: 0.30 (F1=0.639)
+- admiration: 0.30 (F1=0.618)
+
+**Moderate Emotions (threshold 0.1):**
+- Most emotions perform best at 0.1 threshold
+- Examples: anger, surprise, joy, sadness, confusion
+
+**Challenging Emotions (threshold 0.5, F1=0.0):**
+- fear, grief, embarrassment, desire, disappointment
+- These emotions have insufficient training data or are too difficult to distinguish
+- Even at optimal thresholds, the model cannot reliably detect them
+
+**Implementation:**
+
+The threshold sweep script (`src/analysis/threshold_sweep.py`) provides:
+1. Global threshold optimization across all classes
+2. Per-class threshold optimization for fine-tuned control
+3. Visualization of threshold vs. performance trade-offs
+4. JSON export of optimal thresholds for deployment
+
+**Artifacts:**
+- `artifacts/stats/threshold_sweep/threshold_summary.json` - Optimal thresholds
+- `output/figures/11_threshold_curves.png` - Performance vs threshold
+- `output/figures/12_per_class_thresholds.png` - Per-emotion optimal thresholds
+
+**Alternatives Considered:**
+- Fixed 0.5 threshold (rejected - poor performance on rare emotions)
+- Top-k prediction strategy (considered - may over-predict for single-label samples)
+- Calibrated probabilities (future work - requires additional validation data)
+
+**Deployment Recommendations:**
+1. Use 0.1 global threshold for balanced performance across all emotions
+2. Consider per-class thresholds if precision is critical for specific emotions
+3. Accept that 9 emotions (grief, fear, embarrassment, etc.) may never be reliably predicted with current training data
+4. Future work: Collect more training samples for rare emotions or use data augmentation
 
 ---
 
