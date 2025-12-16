@@ -157,7 +157,9 @@ This document serves as the central hub for all experimental results, visualizat
 
 ![Emotion F1 Scores](../../output/figures/10_emotion_f1.png)
 
-**Visual shows:** All 28 emotions ranked by F1 score with color-coded performance (green=high, yellow=medium, red=low)
+**Visual shows:** 10 emotions with F1 > 0 ranked by performance with color-coded bars (green=high, yellow=medium, red=low). Labels show F1 scores; support counts available in table below.
+
+**Note:** 18 emotions with F1=0.000 at threshold 0.5 are excluded from visualization for clarity but included in the complete table below.
 </details>
 
 #### Complete Emotion Performance Table (Threshold = 0.5)
@@ -268,7 +270,9 @@ Shows how many of the 28 emotions are actually predicted at each threshold value
 
 ![Per-Class Thresholds](../../output/figures/15_per_class_thresholds.png)
 
-Each emotion's optimal threshold (maximizing F1) with achieved F1 score. Sorted by F1 performance.
+**Visual shows:** All 28 emotions with their optimal thresholds (x-axis) ranked by F1 performance. Color-coded by F1 score (green=high, red=low). Labels show threshold and achieved F1.
+
+**Note:** See grouped table below for clearer pattern analysis.
 </details>
 
 ### Emotions Grouped by Optimal Threshold

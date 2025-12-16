@@ -48,13 +48,18 @@ def create_f1_bar_chart(df: pd.DataFrame, output_path: str):
     """
     logger.info("Creating F1 score bar chart...")
 
+    # Filter out emotions with F1=0.000 for clearer visualization
+    df_filtered = df[df['f1'] > 0.0].copy()
+    num_excluded = len(df) - len(df_filtered)
+    logger.info(f"Filtering visualization to {len(df_filtered)} emotions with F1 > 0 (excluding {num_excluded} with F1=0.000)")
+
     # Create figure
-    fig, ax = plt.subplots(figsize=(14, 10))
+    fig, ax = plt.subplots(figsize=(12, 8))
 
     # Prepare data (already sorted by F1 in the CSV)
-    emotions = df['emotion'].values
-    f1_scores = df['f1'].values
-    support = df['support'].values
+    emotions = df_filtered['emotion'].values
+    f1_scores = df_filtered['f1'].values
+    support = df_filtered['support'].values
 
     # Create positions for bars
     y_pos = np.arange(len(emotions))
@@ -84,17 +89,18 @@ def create_f1_bar_chart(df: pd.DataFrame, output_path: str):
     # Add F1 score labels on bars
     for i, (bar, f1, sup) in enumerate(zip(bars, f1_scores, support)):
         width = bar.get_width()
-        if width > 0.02:  # Only add label if bar is visible
+        # Position label inside bar if it's long enough, otherwise outside
+        if width > 0.15:
+            label_x = width - 0.02
+            ha = 'right'
+        else:
             label_x = width + 0.01
             ha = 'left'
-        else:
-            label_x = 0.01
-            ha = 'left'
 
-        # Show F1 score and support count
+        # Show F1 score only (support counts available in table)
         ax.text(label_x, bar.get_y() + bar.get_height()/2,
-               f'{f1:.3f} (n={int(sup)})',
-               ha=ha, va='center', fontsize=8, fontweight='bold')
+               f'{f1:.3f}',
+               ha=ha, va='center', fontsize=9, fontweight='bold')
 
     # Add vertical line at 0.5 for reference
     ax.axvline(x=0.5, color='gray', linestyle='--', linewidth=1, alpha=0.5, label='F1=0.5')
