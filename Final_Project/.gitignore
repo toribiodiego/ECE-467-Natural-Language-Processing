@@ -59,10 +59,13 @@ artifacts/**/*
 !artifacts/stats/
 !artifacts/stats/cooccurrence/
 !artifacts/stats/cooccurrence/*
+!artifacts/stats/multiseed_summary.csv
+!artifacts/stats/significance_tests.csv
 
 # Generated figures
 *.png
 !artifacts/stats/cooccurrence/*.png
+!artifacts/stats/robustness_plots.png
 *.jpg
 
 # Exception: Track key portfolio figures for GitHub display

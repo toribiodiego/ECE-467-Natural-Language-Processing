@@ -1,0 +1,13 @@
+metric,metric_formatted,mean,std,min,max,n_seeds
+auc_macro,AUC Macro,0.73771,0.00629,0.73136,0.74393,3
+auc_micro,AUC Micro,0.87751,0.00323,0.87427,0.88072,3
+f1_macro,F1 Macro,0.08558,0.00221,0.08364,0.08799,3
+f1_micro,F1 Micro,0.34374,0.00613,0.33768,0.34993,3
+precision_macro,Precision Macro,0.13509,0.00368,0.13201,0.13917,3
+recall_macro,Recall Macro,0.06256,0.00110,0.06158,0.06375,3
+f1_admiration,F1 Admiration,0.43373,0.03143,0.40120,0.46393,3
+f1_amusement,F1 Amusement,0.35637,0.01822,0.33537,0.36795,3
+f1_anger,F1 Anger,0.00000,0.00000,0.00000,0.00000,3
+f1_annoyance,F1 Annoyance,0.00000,0.00000,0.00000,0.00000,3
+f1_approval,F1 Approval,0.00000,0.00000,0.00000,0.00000,3
+f1_caring,F1 Caring,0.00000,0.00000,0.00000,0.00000,3
