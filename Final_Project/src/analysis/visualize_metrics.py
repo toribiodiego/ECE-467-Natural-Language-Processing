@@ -200,11 +200,11 @@ def plot_auc_vs_f1(ax, df, roberta_color, distilbert_color):
                arrowprops=dict(arrowstyle='->', lw=2, alpha=0.5,
                              color='gray', linestyle='--'))
 
-    # Add labels
-    ax.text(auc_micro_roberta, f1_micro_roberta - 0.03,
+    # Add labels closer to points
+    ax.text(auc_micro_roberta, f1_micro_roberta - 0.01,
            f'RoBERTa\n({auc_micro_roberta:.3f}, {f1_micro_roberta:.3f})',
            ha='center', va='top', fontsize=9, fontweight='bold')
-    ax.text(auc_micro_distilbert, f1_micro_distilbert + 0.03,
+    ax.text(auc_micro_distilbert, f1_micro_distilbert + 0.01,
            f'DistilBERT\n({auc_micro_distilbert:.3f}, {f1_micro_distilbert:.3f})',
            ha='center', va='bottom', fontsize=9, fontweight='bold')
 
@@ -270,7 +270,7 @@ def plot_macro_vs_micro(ax, df, roberta_color, distilbert_color):
     ax.set_title('Macro vs Micro Metrics', fontsize=12, fontweight='bold', pad=10)
     ax.set_xticks(x)
     ax.set_xticklabels(metric_types)
-    ax.legend(loc='upper left', framealpha=0.9, fontsize=9)
+    ax.legend(loc='upper right', framealpha=0.9, fontsize=9)
     ax.grid(True, alpha=0.3, axis='y')
     ax.set_ylim(0, 1.0)
 

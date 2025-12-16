@@ -237,15 +237,15 @@ def plot_threshold_curves(
     logger.info("  Creating macro-averaged metrics plot...")
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(sweep_results['threshold'], sweep_results['f1_macro'],
-             'o-', linewidth=2, markersize=6, label='F1 (Macro)', color='blue')
+             'o-', linewidth=2, markersize=6, label='F1', color='#0000FF')
     ax.plot(sweep_results['threshold'], sweep_results['precision_macro'],
-             's--', linewidth=1.5, markersize=5, label='Precision (Macro)', color='green', alpha=0.7)
+             's--', linewidth=1.5, markersize=5, label='Precision', color='#00FF00')
     ax.plot(sweep_results['threshold'], sweep_results['recall_macro'],
-             '^--', linewidth=1.5, markersize=5, label='Recall (Macro)', color='red', alpha=0.7)
+             '^--', linewidth=1.5, markersize=5, label='Recall', color='#FF0000')
     ax.set_xlabel('Threshold', fontsize=12, fontweight='bold')
     ax.set_ylabel('Score', fontsize=12, fontweight='bold')
-    ax.set_title('Macro-Averaged Metrics vs Threshold', fontsize=14, fontweight='bold')
-    ax.legend(loc='best', fontsize=10)
+    ax.set_title('Macro Metrics vs Threshold', fontsize=14, fontweight='bold')
+    ax.legend(loc='upper right', fontsize=10)
     ax.grid(True, alpha=0.3)
     ax.set_xlim(0, 1.0)
     ax.set_ylim(0, 1.0)
@@ -259,15 +259,15 @@ def plot_threshold_curves(
     logger.info("  Creating micro-averaged metrics plot...")
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(sweep_results['threshold'], sweep_results['f1_micro'],
-             'o-', linewidth=2, markersize=6, label='F1 (Micro)', color='blue')
+             'o-', linewidth=2, markersize=6, label='F1', color='#0000FF')
     ax.plot(sweep_results['threshold'], sweep_results['precision_micro'],
-             's--', linewidth=1.5, markersize=5, label='Precision (Micro)', color='green', alpha=0.7)
+             's--', linewidth=1.5, markersize=5, label='Precision', color='#00FF00')
     ax.plot(sweep_results['threshold'], sweep_results['recall_micro'],
-             '^--', linewidth=1.5, markersize=5, label='Recall (Micro)', color='red', alpha=0.7)
+             '^--', linewidth=1.5, markersize=5, label='Recall', color='#FF0000')
     ax.set_xlabel('Threshold', fontsize=12, fontweight='bold')
     ax.set_ylabel('Score', fontsize=12, fontweight='bold')
-    ax.set_title('Micro-Averaged Metrics vs Threshold', fontsize=14, fontweight='bold')
-    ax.legend(loc='best', fontsize=10)
+    ax.set_title('Micro Metrics vs Threshold', fontsize=14, fontweight='bold')
+    ax.legend(loc='upper right', fontsize=10)
     ax.grid(True, alpha=0.3)
     ax.set_xlim(0, 1.0)
     ax.set_ylim(0, 1.0)
@@ -281,17 +281,17 @@ def plot_threshold_curves(
     logger.info("  Creating F1 comparison plot...")
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(sweep_results['threshold'], sweep_results['f1_macro'],
-             'o-', linewidth=2, markersize=6, label='F1 (Macro)', color='blue')
+             'o-', linewidth=2, markersize=6, label='F1 (Macro)', color='#0000FF')
     ax.plot(sweep_results['threshold'], sweep_results['f1_micro'],
-             's-', linewidth=2, markersize=6, label='F1 (Micro)', color='green')
+             's-', linewidth=2, markersize=6, label='F1 (Micro)', color='#00FF00')
     ax.plot(sweep_results['threshold'], sweep_results['f1_weighted'],
-             '^-', linewidth=2, markersize=6, label='F1 (Weighted)', color='purple')
+             '^-', linewidth=2, markersize=6, label='F1 (Weighted)', color='#FF0000')
     ax.plot(sweep_results['threshold'], sweep_results['f1_sample'],
-             'd-', linewidth=2, markersize=6, label='F1 (Sample)', color='orange')
+             'd-', linewidth=2, markersize=6, label='F1 (Sample)', color='#FF00FF')
     ax.set_xlabel('Threshold', fontsize=12, fontweight='bold')
     ax.set_ylabel('F1 Score', fontsize=12, fontweight='bold')
     ax.set_title('F1 Score Comparison', fontsize=14, fontweight='bold')
-    ax.legend(loc='best', fontsize=10)
+    ax.legend(loc='upper right', fontsize=10)
     ax.grid(True, alpha=0.3)
     ax.set_xlim(0, 1.0)
     ax.set_ylim(0, 1.0)
@@ -305,15 +305,15 @@ def plot_threshold_curves(
     logger.info("  Creating label coverage plot...")
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(sweep_results['threshold'], sweep_results['labels_predicted'],
-             'o-', linewidth=2, markersize=6, color='purple')
+             'o-', linewidth=2, markersize=6, color='#0000FF', label='Labels Predicted')
     ax.set_xlabel('Threshold', fontsize=12, fontweight='bold')
     ax.set_ylabel('Number of Labels Predicted', fontsize=12, fontweight='bold')
     ax.set_title('Label Coverage vs Threshold', fontsize=14, fontweight='bold')
     ax.grid(True, alpha=0.3)
     ax.set_xlim(0, 1.0)
-    ax.set_ylim(0, 28)
-    ax.axhline(y=28, color='gray', linestyle='--', linewidth=1, alpha=0.5, label='All 28 labels')
-    ax.legend(loc='best', fontsize=10)
+    ax.set_ylim(0, 30)  # Increased to 30 to show the line at 28
+    ax.axhline(y=28, color='#FF0000', linestyle='--', linewidth=2, label='All 28 labels')
+    ax.legend(loc='upper right', fontsize=10)
     plt.tight_layout()
     coverage_file = output_path / 'threshold_label_coverage.png'
     plt.savefig(coverage_file, dpi=300, bbox_inches='tight', facecolor='white')

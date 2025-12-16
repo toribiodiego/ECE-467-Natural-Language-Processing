@@ -55,32 +55,29 @@ This document serves as the central hub for all experimental results, visualizat
 
 ### Class Distribution
 
-<details>
-<summary><b>Figure 00: Class Distribution (All 28 Emotions)</b></summary>
-
 ![Class Distribution](../../output/figures/00_class_distribution.png)
+
+**Figure 00.** Class Distribution (All 28 Emotions)
 
 **Key Insights:**
 - Highly imbalanced: neutral (17,772) dominates, grief (96) is rarest
 - 90.1% of neutral samples are single-label (highest rate)
 - Multi-label complexity varies significantly across emotions
-</details>
 
-<details>
-<summary><b>Figure 01: Class Distribution (Excluding Neutral)</b></summary>
 
 ![Class Distribution No Neutral](../../output/figures/01_class_distribution_no_neutral.png)
+
+**Figure 01.** Class Distribution (Excluding Neutral)
 
 **Key Insights:**
 - Admiration (5,122) most common non-neutral emotion
 - Clear long-tail distribution: top emotion 53x more common than rarest
 - Better visualization of multi-label patterns without neutral's dominance
-</details>
+
 
 ### Label Co-occurrence
 
-<details>
-<summary><b>Figure 02-03: Label Co-occurrence Patterns</b></summary>
+**Figure 02-03: Label Co-occurrence Patterns**
 
 ![Label Cooccurrence](../../output/figures/02_label_cooccurrence.png)
 *Full co-occurrence heatmap showing all 28×28 emotion pairs*
@@ -92,12 +89,11 @@ This document serves as the central hub for all experimental results, visualizat
 - Strong positive correlations: joy-love, anger-annoyance, sadness-disappointment
 - Neutral rarely co-occurs with other emotions (90% single-label)
 - Multi-label complexity highest for negative emotions
-</details>
+
 
 ### Text Length Distributions
 
-<details>
-<summary><b>Figure 04-05: Character and Token Length Statistics</b></summary>
+**Figure 04-05: Character and Token Length Statistics**
 
 ![Character Length](../../output/figures/04_character_length_distributions.png)
 ![Token Length](../../output/figures/05_token_length_distributions.png)
@@ -107,12 +103,11 @@ This document serves as the central hub for all experimental results, visualizat
 - Mean token length: ~18 tokens
 - 128 token limit covers ~95% of samples without truncation
 - Long-tail: some samples exceed 500 characters
-</details>
+
 
 ### Metric Relationships
 
-<details>
-<summary><b>Figure 06-09: Metric Correlations and Trade-offs</b></summary>
+**Figure 06-09: Metric Correlations and Trade-offs**
 
 ![Metric Correlations](../../output/figures/06_metric_correlations.png)
 *Correlation matrix showing relationships between evaluation metrics*
@@ -127,7 +122,7 @@ This document serves as the central hub for all experimental results, visualizat
 - Strong correlation between AUC variants (micro/macro)
 - Weaker correlation between AUC and F1 (threshold-dependent)
 - Macro vs Micro divergence reveals class imbalance effects
-</details>
+
 
 ---
 
@@ -152,15 +147,14 @@ This document serves as the central hub for all experimental results, visualizat
 
 ### Per-Emotion Performance
 
-<details>
-<summary><b>Figure 10: Per-Emotion F1 Scores (Threshold = 0.5)</b></summary>
-
 ![Emotion F1 Scores](../../output/figures/10_emotion_f1.png)
+
+**Figure 10.** Per-Emotion F1 Scores (Threshold = 0.5)
 
 **Visual shows:** 10 emotions with F1 > 0 ranked by performance with color-coded bars (green=high, yellow=medium, red=low). Labels show F1 scores; support counts available in table below.
 
 **Note:** 18 emotions with F1=0.000 at threshold 0.5 are excluded from visualization for clarity but included in the complete table below.
-</details>
+
 
 #### Complete Emotion Performance Table (Threshold = 0.5)
 
@@ -231,49 +225,36 @@ Default 0.5 threshold is too conservative for multi-label emotion classification
 **Optimal Threshold:** 0.1 (maximizes macro F1)
 **Trade-off:** Lower threshold reduces precision (0.696 → 0.240) but dramatically improves recall and emotion coverage
 
-<details>
-<summary><b>Figure 11: Macro-Averaged Metrics vs Threshold</b></summary>
-
 ![Threshold Macro](../../output/figures/11_threshold_macro.png)
 
-Shows F1, Precision, and Recall (macro-averaged) across threshold values 0.1-0.9.
-</details>
+**Figure 11.** Treats all 28 emotions equally regardless of frequency. Optimal at threshold 0.1 where model predicts 19/28 emotions.
 
-<details>
-<summary><b>Figure 12: Micro-Averaged Metrics vs Threshold</b></summary>
 
 ![Threshold Micro](../../output/figures/12_threshold_micro.png)
 
-Shows F1, Precision, and Recall (micro-averaged) across threshold values 0.1-0.9.
-</details>
+**Figure 12.** Weighted by label frequency—dominated by common emotions like neutral. Peaks at threshold 0.2 (micro F1=0.515).
 
-<details>
-<summary><b>Figure 13: F1 Score Comparison Across Averaging Methods</b></summary>
 
 ![Threshold F1 Comparison](../../output/figures/13_threshold_f1.png)
 
-Compares F1 scores computed with macro, micro, weighted, and sample averaging strategies.
-</details>
+**Figure 13.** Macro gives equal weight to all emotions, micro weights by frequency, weighted by support, sample by prediction instance.
 
-<details>
-<summary><b>Figure 14: Label Coverage vs Threshold</b></summary>
 
 ![Threshold Coverage](../../output/figures/14_threshold_coverage.png)
 
-Shows how many of the 28 emotions are actually predicted at each threshold value.
-</details>
+**Figure 14.** Higher thresholds drastically reduce emotion diversity: threshold 0.5 predicts only 8/28 emotions, 0.9 predicts just 1.
+
 
 ### Per-Class Optimal Thresholds
 
-<details>
-<summary><b>Figure 15: Per-Emotion Optimal Thresholds</b></summary>
-
 ![Per-Class Thresholds](../../output/figures/15_per_class_thresholds.png)
+
+**Figure 15.** Per-Emotion Optimal Thresholds
 
 **Visual shows:** All 28 emotions with their optimal thresholds (x-axis) ranked by F1 performance. Color-coded by F1 score (green=high, red=low). Labels show threshold and achieved F1.
 
 **Note:** See grouped table below for clearer pattern analysis.
-</details>
+
 
 ### Emotions Grouped by Optimal Threshold
 
@@ -322,21 +303,15 @@ Calibration measures whether predicted probabilities match observed frequencies.
 
 **Paradox:** Best-calibrated emotions have worst F1 scores because model correctly assigns low probabilities to rare/hard emotions.
 
-<details>
-<summary><b>Figure 17: Reliability Diagrams (Top 6 Emotions by Support)</b></summary>
-
 ![Reliability Diagram](../../output/figures/17_reliability_diagram.png)
 
-Shows predicted vs observed probabilities for gratitude, neutral, admiration, curiosity, love, and amusement. Points near the diagonal indicate good calibration.
-</details>
+**Figure 17.** Shows predicted vs observed probabilities for gratitude, neutral, admiration, curiosity, love, and amusement. Points near the diagonal indicate good calibration.
 
-<details>
-<summary><b>Figure 18: Calibration Summary (All 28 Emotions)</b></summary>
 
 ![Calibration Summary](../../output/figures/18_calibration_summary.png)
 
-Comparison of Brier scores and ECE across all emotions, sorted by Brier score.
-</details>
+**Figure 18.** Comparison of Brier scores and ECE across all emotions, sorted by Brier score.
+
 
 ### Practical Implications
 
