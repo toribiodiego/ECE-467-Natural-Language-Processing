@@ -656,6 +656,48 @@ Each CSV contains:
 - `pred_labels`: Predicted emotions at threshold (comma-separated)
 - `pred_prob_{emotion}`: Probability for each of 28 emotions
 
+### Exporting Per-Class Metrics from Checkpoints
+
+To analyze which emotions the model handles well vs poorly, use the per-class metrics export script:
+
+```bash
+# Export per-class metrics for test set
+python -m src.analysis.export_per_class_metrics \
+  --checkpoint artifacts/models/roberta/roberta-large-20251212-211010 \
+  --output artifacts/stats/per_class_metrics.csv
+
+# Export with custom threshold
+python -m src.analysis.export_per_class_metrics \
+  --checkpoint artifacts/models/distilbert/distilbert-base-20251212-225748 \
+  --output artifacts/stats/per_class_metrics.csv \
+  --threshold 0.3
+
+# Export for validation set
+python -m src.analysis.export_per_class_metrics \
+  --checkpoint artifacts/models/roberta/roberta-large-20251212-211010 \
+  --output artifacts/stats/val_per_class_metrics.csv \
+  --split validation
+```
+
+**Options:**
+- `--checkpoint`: Path to model checkpoint directory (required)
+- `--output`: Path to output CSV file (required)
+- `--threshold`: Classification threshold (default: 0.5)
+- `--batch-size`: Batch size for inference (default: 32)
+- `--split`: Dataset split to evaluate (default: test)
+
+**Output CSV Format:**
+
+The script generates a CSV with per-emotion metrics sorted by F1 score:
+- `rank`: Ranking by F1 score (1 = best)
+- `emotion`: Emotion label name
+- `precision`: Precision for this emotion
+- `recall`: Recall for this emotion
+- `f1`: F1 score for this emotion
+- `support`: Number of samples with this emotion in the dataset
+
+This is useful for identifying which emotions need improvement and understanding model strengths/weaknesses.
+
 ---
 
 ## Figure Generation
