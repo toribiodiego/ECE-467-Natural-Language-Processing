@@ -159,12 +159,14 @@ def plot_percentage_differences(ax, df, decrease_color, increase_color):
     ax.axvline(x=0, color='black', linestyle='-', linewidth=0.8, alpha=0.5)
     ax.grid(True, alpha=0.3, axis='x')
 
-    # Add value labels
+    # Add value labels with contrasting colors
     for i, (bar, val) in enumerate(zip(bars, pct_diffs_sorted)):
+        # Use white text on red bars, black text on green bars
+        text_color = 'white' if val < 0 else 'black'
         ax.text(val, bar.get_y() + bar.get_height()/2,
                f' {val:.1f}%',
                va='center', ha='left' if val < 0 else 'right',
-               fontsize=9, fontweight='bold')
+               fontsize=9, fontweight='bold', color=text_color)
 
     # Add legend
     from matplotlib.patches import Patch
