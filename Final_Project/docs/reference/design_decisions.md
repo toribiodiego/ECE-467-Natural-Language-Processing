@@ -476,6 +476,83 @@ The threshold sweep script (`src/analysis/threshold_sweep.py`) provides:
 3. Accept that 9 emotions (grief, fear, embarrassment, etc.) may never be reliably predicted with current training data
 4. Future work: Collect more training samples for rare emotions or use data augmentation
 
+### Model Calibration
+
+**Decision:** Document calibration quality through Brier score and Expected Calibration Error (ECE) analysis to understand the reliability of predicted probabilities.
+
+**Rationale:**
+
+While threshold optimization determines when to predict an emotion, calibration analysis evaluates whether the model's confidence scores are trustworthy. A well-calibrated model's 70% prediction should be correct approximately 70% of the time.
+
+**Calibration Analysis Results:**
+
+Analysis of RoBERTa-Large validation predictions (5,426 samples) reveals:
+
+**Overall Calibration:**
+- Brier Score: 0.0285 (scale: 0=perfect, 1=worst)
+- Expected Calibration Error (ECE): 0.0094 (scale: 0=perfect)
+
+Both metrics indicate the model is reasonably well-calibrated overall. The low Brier score suggests predicted probabilities closely match actual outcomes, and the low ECE confirms minimal systematic bias between predicted confidence and observed accuracy.
+
+**Per-Emotion Calibration:**
+
+**Best Calibrated Emotions (lowest Brier score):**
+- grief: 0.0024
+- pride: 0.0028
+- relief: 0.0033
+- nervousness: 0.0039
+- embarrassment: 0.0064
+
+Interestingly, the best-calibrated emotions are those with the poorest prediction performance (F1=0.0). This occurs because the model correctly predicts low probabilities for these rare emotions - when it says 1% chance, the actual rate is indeed near 1%.
+
+**Worst Calibrated Emotions (highest Brier score):**
+- neutral: 0.1704
+- approval: 0.0671
+- disapproval: 0.0503
+- annoyance: 0.0493
+- admiration: 0.0493
+
+Neutral has the poorest calibration despite being the most common emotion. This suggests the model struggles to accurately estimate confidence for the dominant class, possibly due to class imbalance effects during training.
+
+**Reliability Diagram Insights:**
+
+For top-performing emotions (gratitude, amusement, love), reliability diagrams show:
+- Predictions closely follow the perfect calibration diagonal
+- Minor tendency toward overconfidence in mid-range probabilities (0.3-0.7)
+- High-confidence predictions (>0.8) are well-calibrated
+
+**Practical Implications:**
+
+1. **Trust high-confidence predictions**: When the model predicts >80% probability, it is reliably correct
+2. **Mid-range uncertainty**: Predictions in 30-70% range may be slightly overconfident
+3. **Rare emotion probabilities are accurate**: Low probabilities (<10%) for rare emotions can be trusted
+4. **Neutral requires caution**: Neutral predictions may be less reliable than other high-frequency emotions
+
+**Calibration vs. Threshold Findings:**
+
+The calibration analysis complements threshold optimization:
+- Low threshold (0.1) is appropriate given well-calibrated low probabilities
+- Model's probability estimates are trustworthy, supporting confidence-based decision-making
+- Poor-performing emotions are correctly uncertain (low probabilities), not miscalibrated
+
+**Implementation:**
+
+The calibration analysis script (`src/analysis/calibration.py`) computes:
+1. Brier score (mean squared error between predictions and outcomes)
+2. Expected Calibration Error (average miscalibration across probability bins)
+3. Reliability diagrams showing predicted vs observed frequencies
+
+**Artifacts:**
+- `artifacts/stats/calibration/calibration_summary.json` - Overall and per-class metrics
+- `artifacts/stats/calibration/per_class_calibration.csv` - Ranked calibration results
+- `output/figures/17_reliability_diagram.png` - Reliability curves for top 6 emotions
+- `output/figures/18_calibration_summary.png` - Brier score and ECE by emotion
+
+**Future Work:**
+- Apply temperature scaling or Platt scaling to improve calibration for neutral
+- Investigate overconfidence in mid-range probabilities
+- Test calibration stability across different validation sets
+
 ---
 
 **Last Updated:** December 2024
