@@ -271,19 +271,22 @@ Shows how many of the 28 emotions are actually predicted at each threshold value
 Each emotion's optimal threshold (maximizing F1) with achieved F1 score. Sorted by F1 performance.
 </details>
 
-**Top 5 Emotions (with optimal thresholds):**
-- gratitude: threshold=0.30, F1=0.899
-- amusement: threshold=0.20, F1=0.761
-- love: threshold=0.20, F1=0.746
-- neutral: threshold=0.30, F1=0.639
-- admiration: threshold=0.30, F1=0.618
+### Emotions Grouped by Optimal Threshold
 
-**Challenging Emotions (F1=0 even at optimal threshold):**
-- fear, grief, embarrassment, desire, disappointment, pride, relief, nervousness, caring
+| Optimal Threshold | Emotion Count | Avg F1 at Optimal | Emotions |
+|-------------------|---------------|-------------------|----------|
+| **0.1** | 11 | 0.283 | disapproval (0.007), approval (0.033), disgust (0.087), confusion (0.212), annoyance (0.291), surprise (0.307), anger (0.316), sadness (0.346), joy (0.490), optimism (0.521), remorse (0.603) |
+| **0.2** | 3 | 0.671 | curiosity (0.506), love (0.746), amusement (0.761) |
+| **0.3** | 3 | 0.719 | admiration (0.618), neutral (0.639), gratitude (0.899) |
+| **0.5** (default) | 11 | 0.000 | caring (0.000), pride (0.000), relief (0.000), realization (0.000), grief (0.000), nervousness (0.000), excitement (0.000), embarrassment (0.000), disappointment (0.000), desire (0.000), fear (0.000) |
 
-**Key Insight:** Most emotions perform best at 0.1-0.3 threshold, not the default 0.5.
+**Key Insights:**
+- **39% of emotions (11/28) achieve best F1 at threshold 0.1** - far below default 0.5
+- **61% of emotions (17/28) perform best at threshold ≤ 0.3**
+- **Emotions that use default 0.5 all have F1=0.000** - no true positives even at optimal threshold (intrinsically very difficult emotions with low support)
+- **Higher optimal thresholds correlate with better F1**: 0.3 group (avg F1=0.719) > 0.2 group (0.671) > 0.1 group (0.283) > 0.5 group (0.000)
 
-**See:** `artifacts/stats/threshold_sweep/` for complete threshold sweep data and per-class optimal threshold JSON.
+**See:** `artifacts/stats/threshold_sweep/per_class_optimal_thresholds.csv` for complete per-emotion threshold data.
 
 ---
 
