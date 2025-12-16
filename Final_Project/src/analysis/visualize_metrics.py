@@ -29,9 +29,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Use a clean, professional style
-plt.style.use('seaborn-v0_8-darkgrid')
-
 
 def load_metrics_csv(csv_path: str) -> pd.DataFrame:
     """Load metrics comparison CSV.
