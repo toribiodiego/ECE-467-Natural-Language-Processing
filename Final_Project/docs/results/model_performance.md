@@ -282,6 +282,160 @@ The visualization shows all 28 emotions ranked by F1 score with color-coded perf
 
 ---
 
+## Multi-Label Prediction Performance
+
+**Model:** RoBERTa-Large
+**Classification Threshold:** 0.5 (default)
+**Analysis Focus:** Combination-level prediction accuracy
+
+### Overview
+
+While per-emotion metrics assess individual label predictions, multi-label metrics evaluate the model's ability to predict emotion combinations (pairs, triples) that naturally co-occur in text. This is critical since 15.4% of test samples contain multiple emotions.
+
+### Severe Multi-Label Under-Prediction
+
+**Ground Truth (Test Set):**
+- Multi-label samples: 837 (15.4% of 5,427 samples)
+- Unique emotion pairs: 210
+- Unique triples: 28
+- Total unique combinations: 238
+
+**Model Predictions (Threshold 0.5):**
+- Multi-label samples: 8 (0.3% of 2,391 predictions)
+- Unique emotion pairs: 3
+- Unique triples: 0
+- Total unique combinations: 3
+
+**Key Finding:** Model predicts only 0.3% multi-label rate vs 15.4% ground truth, representing 98% under-prediction of multi-label cases. This confirms the model is severely conservative and fails to capture natural emotion co-occurrence patterns.
+
+### Combination-Level Performance
+
+Analysis of top-20 most frequent emotion combinations reveals catastrophic failure at threshold 0.5:
+
+**Exact Match Statistics:**
+- Combinations analyzed: 20 (most frequent in test set)
+- Combinations with any exact matches: 1 (5%)
+- Mean exact match rate: 0.3%
+- Median exact match rate: 0.0%
+
+**Only Successful Combination:**
+- **admiration + love** (18 occurrences): 1 exact match (5.6% recall)
+  - Mean Jaccard similarity: 0.417
+  - Partial match rate: 77.8% (at least one label correct)
+
+### Worst Performing Combinations
+
+The following emotion pairs appear frequently (10+ times) but achieve 0% exact match rate and 0% partial match rate:
+
+1. **anger + annoyance** (26 occurrences)
+   - Model misses 100% of anger+annoyance combinations
+   - Never predicts either emotion together
+   - Jaccard similarity: 0.0
+
+2. **annoyance + disapproval** (19 occurrences)
+   - Model misses 100% of annoyance+disapproval combinations
+   - Never predicts either emotion together
+   - Jaccard similarity: 0.0
+
+3. **disappointment + sadness** (16 occurrences)
+   - Model misses 100% of disappointment+sadness combinations
+   - Never predicts either emotion together
+   - Jaccard similarity: 0.0
+
+4. **annoyance + disgust** (12 occurrences)
+   - Model misses 100% of annoyance+disgust combinations
+   - Never predicts either emotion together
+   - Jaccard similarity: 0.0
+
+5. **annoyance + disappointment** (10 occurrences)
+   - Model misses 100% of annoyance+disappointment combinations
+   - Never predicts either emotion together
+   - Jaccard similarity: 0.0
+
+6. **approval + caring** (10 occurrences)
+   - Model misses 100% of approval+caring combinations
+   - Never predicts either emotion together
+   - Jaccard similarity: 0.0
+
+**Pattern:** All worst-performing combinations involve negative emotions (anger, annoyance, disappointment, disapproval, disgust, sadness) except approval+caring. This suggests:
+- Threshold 0.5 is too conservative for negative emotion detection
+- Model learns these emotions exist but assigns low probabilities
+- Negative emotion clusters require significantly lower thresholds
+
+### Partial Match Analysis
+
+Even when allowing partial matches (at least one label correct), performance is poor:
+
+**Combinations with 0% partial match rate (6 total):**
+- anger + annoyance
+- annoyance + disapproval
+- disappointment + sadness
+- annoyance + disgust
+- annoyance + disappointment
+- approval + caring
+
+**Best partial match performance:**
+- **admiration + gratitude** (26 occurrences): 92.3% partial match, but 0% exact match
+  - Model predicts one emotion but not the combination
+- **admiration + love** (18 occurrences): 77.8% partial match, 5.6% exact match
+  - Only combination with any exact matches
+
+### Jaccard Similarity
+
+Mean Jaccard similarity (intersection over union) across top-20 combinations:
+
+- **Overall mean:** 0.164 (only 16.4% overlap between predicted and true labels)
+- **Median:** 0.0 (half of combinations have zero overlap)
+- **Best:** admiration + love (0.417)
+- **Worst:** 6 combinations with 0.0 Jaccard (total prediction failure)
+
+### Root Cause Analysis
+
+**Why threshold 0.5 fails at multi-label prediction:**
+
+1. **Conservative probability calibration**
+   - Model assigns low probabilities to rare emotions even when present
+   - Threshold 0.5 filters out most true positives for negative emotions
+   - See calibration analysis: Brier score 0.0285, ECE 0.0094 (probabilities are trustworthy)
+
+2. **Multi-label rate mismatch**
+   - Ground truth: 15.4% multi-label
+   - Predictions: 0.3% multi-label
+   - 98% under-prediction rate proves threshold is too high
+
+3. **Negative emotion bias**
+   - Negative emotions (anger, annoyance, disappointment) are never predicted together
+   - Model learned these patterns exist (AUC 0.9045) but assigns low probabilities
+   - Suggests need for emotion-specific or combination-specific thresholds
+
+### Recommendations
+
+**Immediate Actions:**
+1. **Per-emotion threshold optimization** - Lower thresholds for negative emotions and rare labels
+2. **Target 15.4% multi-label rate** - Adjust global threshold to match ground truth distribution
+3. **Evaluate at threshold 0.1** - Re-run analysis with lower threshold to assess upper-bound performance
+
+**Longer-term Improvements:**
+4. **Focal loss training** - Address probability calibration for rare/negative emotions
+5. **Class-weighted BCE** - Increase loss contribution from under-predicted emotions
+6. **Multi-label-aware metrics** - Use subset accuracy and Jaccard index as training objectives
+
+### Data Sources
+
+- `artifacts/stats/cooccurrence/dataset_cooccurrence.csv` - Test set ground truth co-occurrence baseline
+- `artifacts/stats/cooccurrence/prediction_cooccurrence.csv` - Model prediction co-occurrence at threshold 0.5
+- `artifacts/stats/cooccurrence/combo_metrics.csv` - Combination-level performance metrics (exact/partial match, Jaccard)
+
+### Visualizations
+
+- `output/figures/19_cooccurrence_heatmap.png` - Side-by-side heatmap comparing ground truth (210 pairs) vs predictions (3 pairs)
+
+**See Also:**
+- `dataset_analysis.md#label-co-occurrence-patterns` for ground truth co-occurrence statistics
+- `design_decisions.md#evaluation-metrics` for metric selection rationale
+
+---
+
 ## Threshold Selection
 
 ### Strategy Comparison

@@ -176,25 +176,66 @@ Example emotions (full table in CSV):
 
 ### Overview
 
-Understanding which emotions frequently appear together helps inform multi-label modeling strategies and error analysis. The co-occurrence matrix captures these relationships across all dataset splits.
+Understanding which emotions frequently appear together helps inform multi-label modeling strategies and error analysis. The co-occurrence analysis reveals natural emotion correlation patterns in the dataset and provides baseline expectations for multi-label prediction performance.
 
-### Key Statistics
+### Test Set Baseline Statistics
 
-- **Total label occurrences:** 63,812 (sum of all emotions across all samples)
-- **Total co-occurrences:** 10,321 (unique emotion pairs appearing together)
-- **Co-occurrence rate:** 16.2% of occurrences involve multiple labels
+Detailed analysis of the test split (5,427 samples) reveals the following multi-label characteristics:
 
-### Most Common Co-occurring Pairs
+**Multi-label Distribution:**
+- **Single-label samples:** 4,590 (84.6%)
+- **Multi-label samples:** 837 (15.4%)
+- **Unique emotion pairs:** 210 different two-emotion combinations
+- **Unique triples:** 28 different three-emotion combinations
+- **Total unique combinations:** 238 multi-label patterns
 
-Based on `label_cooccurrence.csv`, the most frequently co-occurring emotion pairs are:
+**Key Finding:** 15.4% multi-label rate establishes baseline expectation that models should predict multiple emotions for roughly 1 in 6.5 test samples.
 
-1. **anger + annoyance** (348 co-occurrences)
+### Most Common Co-occurring Pairs (Test Set)
+
+Based on `artifacts/stats/cooccurrence/dataset_cooccurrence.csv`, the top-10 most frequent emotion pairs in the test set are:
+
+1. **anger + annoyance** (26 occurrences)
    - Related negative emotions often triggered by similar contexts
+   - Lift: 3.89 (3.9x more likely to co-occur than random chance)
 
-2. **admiration + love** (236 co-occurrences)
-   - Positive emotions expressing appreciation and affection
+2. **admiration + gratitude** (26 occurrences)
+   - Positive emotions expressing appreciation
+   - Lift: 3.21
 
-3. **joy + love** (high correlation in positive contexts)
+3. **approval + neutral** (23 occurrences)
+   - Mixed sentiment combining agreement with neutral stance
+   - Lift: 1.99
+
+4. **curiosity + neutral** (22 occurrences)
+   - Inquisitive tone without strong emotion
+   - Lift: 2.44
+
+5. **annoyance + neutral** (22 occurrences)
+   - Mild negative sentiment
+   - Lift: 2.33
+
+6. **annoyance + disapproval** (19 occurrences)
+   - Negative emotion cluster
+   - Lift: 3.16
+
+7. **confusion + curiosity** (19 occurrences)
+   - Questioning/uncertainty cluster
+   - Lift: 4.30
+
+8. **admiration + love** (18 occurrences)
+   - Strong positive emotion cluster
+   - Lift: 3.64
+
+9. **admiration + approval** (16 occurrences)
+   - Positive acknowledgment cluster
+   - Lift: 2.47
+
+10. **disappointment + sadness** (16 occurrences)
+    - Related negative emotions
+    - Lift: 5.82 (strongest correlation in top-10)
+
+**Note:** Lift > 1.0 indicates emotions co-occur more frequently than random chance. All top-10 pairs show lift > 1.9, confirming genuine semantic relationships.
 
 ### Emotion Relationship Patterns
 
@@ -212,19 +253,27 @@ Based on `label_cooccurrence.csv`, the most frequently co-occurring emotion pair
 1. **Threshold tuning**
    - Emotions with high co-occurrence need coordinated thresholds
    - Standalone emotions can use independent thresholds
+   - Multi-label rate of 15.4% suggests optimal thresholds should produce similar prediction rates
 
 2. **Error analysis**
    - Confusing correlated emotions (e.g., anger/annoyance) is less severe than unrelated errors
    - Models should learn to predict emotion clusters appropriately
+   - See `model_performance.md#multi-label-prediction-performance` for model analysis
 
 3. **Evaluation metrics**
    - Hamming loss may be too strict for correlated emotions
    - F1 scores better capture multi-label performance
    - Per-pair accuracy could measure correlation learning
+   - Combination-level metrics assess multi-label prediction quality
 
-**Data Source:** `output/stats/label_cooccurrence.csv`
+**Data Sources:**
+- `output/stats/label_cooccurrence.csv` (full dataset co-occurrence matrix)
+- `artifacts/stats/cooccurrence/dataset_cooccurrence.csv` (test set detailed analysis)
+- `artifacts/stats/cooccurrence/combo_metrics.csv` (combination-level performance)
 
-**Visualization:** `output/figures/02_label_cooccurrence.png` (heatmap)
+**Visualizations:**
+- `output/figures/02_label_cooccurrence.png` (full dataset heatmap)
+- `output/figures/19_cooccurrence_heatmap.png` (test set ground truth vs predictions)
 
 ---
 
