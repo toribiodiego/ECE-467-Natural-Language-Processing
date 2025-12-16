@@ -97,6 +97,87 @@ CUDA available: True
 
 ### Step 5: Start Training
 
+## Colab Auto-Disconnect Setup
+
+If you're running training on Google Colab, set up the auto-disconnect watcher to prevent wasted compute units after training completes.
+
+### How It Works
+
+1. The training script creates a flag file (`/content/__DISCONNECT__`) when training finishes
+2. A notebook watcher cell monitors this flag file
+3. When detected, the watcher automatically disconnects the runtime using `runtime.unassign()`
+
+### Setup Instructions
+
+**Create a new code cell at the TOP of your Colab notebook** and run it before starting training:
+
+```python
+# Colab Runtime Auto-Disconnect Watcher
+# Run this cell FIRST, then run your training command in a separate cell
+
+import time
+import os
+from pathlib import Path
+
+FLAG_FILE = "/content/__DISCONNECT__"
+
+print("Starting Colab runtime watcher...")
+print(f"Monitoring flag file: {FLAG_FILE}")
+print("Training can now be started in another cell.")
+print("-" * 60)
+
+def watch_for_disconnect():
+    """Monitor flag file and disconnect runtime when detected."""
+    while True:
+        if os.path.exists(FLAG_FILE):
+            print("\n" + "=" * 60)
+            print("DISCONNECT FLAG DETECTED!")
+            print("=" * 60)
+            print(f"Flag file found at: {FLAG_FILE}")
+
+            # Read timestamp from flag file
+            try:
+                with open(FLAG_FILE, 'r') as f:
+                    content = f.read().strip()
+                    print(f"Content: {content}")
+            except Exception as e:
+                print(f"Could not read flag file: {e}")
+
+            print("\nDisconnecting Colab runtime in 5 seconds...")
+            print("This prevents wasted compute units after training completes.")
+            time.sleep(5)
+
+            # Disconnect the runtime
+            from google.colab import runtime
+            runtime.unassign()
+            break
+
+        # Check every 30 seconds
+        time.sleep(30)
+
+# Start watching (this will run indefinitely until flag is detected)
+watch_for_disconnect()
+```
+
+**Usage:**
+1. Run the watcher cell above FIRST
+2. In a SEPARATE cell, run your training command with `--colab` flag
+3. The watcher will automatically disconnect the runtime when training completes
+
+**Example training command** (run in separate cell):
+```bash
+python -m src.training.train \
+  --model distilbert-base-uncased \
+  --lr 3e-5 \
+  --batch-size 32 \
+  --epochs 2 \
+  --dropout 0.1 \
+  --colab \
+  --output-dir artifacts/models/distilbert-test
+```
+
+---
+
 ## RoBERTa-Large Production Training
 
 **Exact command for production RoBERTa-Large training:**
