@@ -1261,6 +1261,39 @@ def save_per_class_metrics_to_csv(
 
 
 # ============================================================================
+# Colab Auto-Disconnect
+# ============================================================================
+
+def _looks_like_colab() -> bool:
+    """
+    Check if current environment appears to be Google Colab.
+
+    Verifies Colab-specific environment variables to prevent accidental
+    disconnect on local or remote GPU machines.
+
+    Returns:
+        True if environment has Colab-specific markers, False otherwise
+    """
+    # Check for Colab-specific environment variables
+    colab_gpu = os.environ.get('COLAB_GPU', None) is not None
+    colab_release = os.environ.get('COLAB_RELEASE_TAG', None) is not None
+    colab_backend = os.environ.get('COLAB_BACKEND_VERSION', None) is not None
+
+    # Additional check: /content directory is standard in Colab
+    content_dir_exists = os.path.exists('/content')
+
+    # Require at least one Colab env var OR /content directory
+    is_colab = colab_gpu or colab_release or colab_backend or content_dir_exists
+
+    if is_colab:
+        logger.info("Detected Colab environment")
+    else:
+        logger.info("Not running in Colab environment")
+
+    return is_colab
+
+
+# ============================================================================
 # Main Function
 # ============================================================================
 
