@@ -1293,6 +1293,36 @@ def _looks_like_colab() -> bool:
     return is_colab
 
 
+def _request_colab_disconnect(flag_path: str) -> None:
+    """
+    Create flag file to signal Colab notebook watcher for runtime disconnect.
+
+    The flag file is monitored by a notebook cell that calls runtime.unassign()
+    when detected, preventing wasted compute units after training completes.
+
+    Args:
+        flag_path: Path to flag file (default: /content/__DISCONNECT__)
+
+    Raises:
+        OSError: If flag file cannot be created
+    """
+    try:
+        # Ensure parent directory exists
+        flag_file = Path(flag_path)
+        flag_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Create flag file with timestamp
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        flag_file.write_text(f"Training completed at {timestamp}\n")
+
+        logger.info(f"Created disconnect flag file: {flag_path}")
+        logger.info("Notebook watcher will disconnect runtime shortly")
+
+    except OSError as e:
+        logger.error(f"Failed to create disconnect flag file: {e}")
+        raise
+
+
 # ============================================================================
 # Main Function
 # ============================================================================
