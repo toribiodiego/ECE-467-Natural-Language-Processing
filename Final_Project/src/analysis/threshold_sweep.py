@@ -343,8 +343,15 @@ def plot_per_class_thresholds(
     # Create positions for bars
     y_pos = np.arange(len(emotions))
 
+    # Normalize F1 scores for color mapping
+    max_f1 = f1_scores.max()
+    if max_f1 > 0:
+        normalized_f1 = f1_scores / max_f1
+    else:
+        normalized_f1 = f1_scores
+
     # Color by F1 score
-    colors = plt.cm.RdYlGn(f1_scores)
+    colors = plt.cm.RdYlGn(normalized_f1)
 
     # Create horizontal bar chart
     bars = ax.barh(y_pos, thresholds, color=colors, alpha=0.8, edgecolor='black', linewidth=0.5)
@@ -368,7 +375,16 @@ def plot_per_class_thresholds(
     ax.axvline(x=0.5, color='gray', linestyle='--', linewidth=1, alpha=0.5, label='Default (0.5)')
 
     ax.grid(True, alpha=0.3, axis='x')
-    ax.legend(loc='lower right')
+    ax.legend(loc='upper right', framealpha=0.9)
+
+    # Add colorbar to show F1 score scale
+    from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import Normalize
+    sm = ScalarMappable(cmap=plt.cm.RdYlGn, norm=Normalize(vmin=0, vmax=max_f1))
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, pad=0.02, aspect=30)
+    cbar.set_label('F1 Score', fontsize=10, fontweight='bold')
+    cbar.ax.tick_params(labelsize=8)
 
     plt.tight_layout()
 

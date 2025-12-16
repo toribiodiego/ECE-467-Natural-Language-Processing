@@ -78,7 +78,7 @@ def create_f1_bar_chart(df: pd.DataFrame, output_path: str):
     ax.set_yticklabels(emotions, fontsize=9)
     ax.set_xlabel('F1 Score', fontsize=12, fontweight='bold')
     ax.set_ylabel('Emotion', fontsize=12, fontweight='bold')
-    ax.set_title('Per-Emotion F1 Scores (RoBERTa-Large)\nSorted by Performance',
+    ax.set_title('Per-Emotion F1 Scores (Sorted by Performance)',
                 fontsize=14, fontweight='bold', pad=15)
 
     # Add F1 score labels on bars
