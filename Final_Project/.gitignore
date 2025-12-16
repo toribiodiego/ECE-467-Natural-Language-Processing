@@ -73,6 +73,7 @@ artifacts/**/*
 !output/figures/17_reliability_diagram.png
 !output/figures/18_calibration_summary.png
 !output/figures/19_cooccurrence_heatmap.png
+!output/figures/20_robustness_confidence_intervals.png
 *.jpeg
 *.gif
 *.svg
