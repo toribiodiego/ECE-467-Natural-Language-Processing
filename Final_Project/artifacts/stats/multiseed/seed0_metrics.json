@@ -1,0 +1,24 @@
+{
+  "test/auc_macro": 0.73136,
+  "test/auc_micro": 0.87427,
+  "test/f1_macro": 0.08364,
+  "test/f1_micro": 0.33768,
+  "test/precision_macro": 0.13201,
+  "test/recall_macro": 0.06158,
+  "test/f1_admiration": 0.4012,
+  "test/f1_amusement": 0.36795,
+  "test/f1_anger": 0.0,
+  "test/f1_annoyance": 0.0,
+  "test/f1_approval": 0.0,
+  "test/f1_caring": 0.0,
+  "_metadata": {
+    "run_id": "UNKNOWN",
+    "run_name": "distilbert-seed0",
+    "run_url": "https://wandb.ai/Cooper-Union/GoEmotions_Classification",
+    "seed": 0,
+    "model": "distilbert-base",
+    "best_epoch": 10,
+    "final_epoch": 10,
+    "note": "Run ID extracted from incomplete log output"
+  }
+}

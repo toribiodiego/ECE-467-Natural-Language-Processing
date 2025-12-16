@@ -1,0 +1,40 @@
+# Multi-Seed Test Metrics
+
+This directory contains test metrics from 3 DistilBERT training runs with different random seeds for robustness analysis.
+
+## Files
+
+- `seed13_metrics.json` - Metrics from seed 13 run (run ID: hcx0hper)
+- `seed23_metrics.json` - Metrics from seed 23 run (run ID: xglzn8sy)
+- `seed0_metrics.json` - Metrics from seed 0 run
+
+## Metrics Summary
+
+| Seed | AUC Macro | AUC Micro | F1 Macro | F1 Micro |
+|------|-----------|-----------|----------|----------|
+| 13   | 0.74393   | 0.88072   | 0.08799  | 0.34993  |
+| 23   | 0.73783   | 0.87755   | 0.08510  | 0.34360  |
+| 0    | 0.73136   | 0.87427   | 0.08364  | 0.33768  |
+
+**Mean ± Std:**
+- AUC Macro: 0.73771 ± 0.00513
+- AUC Micro: 0.87751 ± 0.00264
+
+## Purpose
+
+These metrics are used for:
+1. Computing mean and standard deviation across seeds
+2. Statistical significance testing vs RoBERTa-Large baseline
+3. Quantifying model variance and reliability
+
+## Next Steps
+
+1. Aggregate metrics: `python -m src.analysis.aggregate_seeds --metrics-dir artifacts/stats/multiseed/`
+2. Significance tests: `python -m src.analysis.significance_test`
+3. Visualizations: Generate confidence interval plots
+
+## W&B Run Links
+
+- Seed 13: https://wandb.ai/Cooper-Union/GoEmotions_Classification/runs/hcx0hper
+- Seed 23: https://wandb.ai/Cooper-Union/GoEmotions_Classification/runs/xglzn8sy
+- Seed 0: https://wandb.ai/Cooper-Union/GoEmotions_Classification (check recent runs)
