@@ -459,8 +459,11 @@ The threshold sweep script (`src/analysis/threshold_sweep.py`) provides:
 
 **Artifacts:**
 - `artifacts/stats/threshold_sweep/threshold_summary.json` - Optimal thresholds
-- `output/figures/11_threshold_curves.png` - Performance vs threshold
-- `output/figures/12_per_class_thresholds.png` - Per-emotion optimal thresholds
+- `output/figures/11_threshold_macro.png` - Macro-averaged metrics vs threshold
+- `output/figures/12_threshold_micro.png` - Micro-averaged metrics vs threshold
+- `output/figures/13_threshold_f1.png` - F1 score comparison across averaging methods
+- `output/figures/14_threshold_coverage.png` - Label coverage vs threshold
+- `output/figures/15_per_class_thresholds.png` - Per-emotion optimal thresholds
 
 **Alternatives Considered:**
 - Fixed 0.5 threshold (rejected - poor performance on rare emotions)

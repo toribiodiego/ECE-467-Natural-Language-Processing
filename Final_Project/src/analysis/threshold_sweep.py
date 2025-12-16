@@ -219,90 +219,106 @@ def per_class_threshold_analysis(
 
 def plot_threshold_curves(
     sweep_results: pd.DataFrame,
-    output_path: str
+    output_dir: str
 ):
     """
-    Plot threshold vs performance curves.
+    Plot threshold vs performance curves as separate figures.
 
     Args:
         sweep_results: DataFrame with sweep results
-        output_path: Path to save output PNG
+        output_dir: Directory to save output PNGs
     """
-    logger.info("Generating threshold curves plot...")
+    logger.info("Generating threshold curves plots...")
 
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     # Plot 1: Macro metrics
-    ax1 = axes[0, 0]
-    ax1.plot(sweep_results['threshold'], sweep_results['f1_macro'],
+    logger.info("  Creating macro-averaged metrics plot...")
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(sweep_results['threshold'], sweep_results['f1_macro'],
              'o-', linewidth=2, markersize=6, label='F1 (Macro)', color='blue')
-    ax1.plot(sweep_results['threshold'], sweep_results['precision_macro'],
+    ax.plot(sweep_results['threshold'], sweep_results['precision_macro'],
              's--', linewidth=1.5, markersize=5, label='Precision (Macro)', color='green', alpha=0.7)
-    ax1.plot(sweep_results['threshold'], sweep_results['recall_macro'],
+    ax.plot(sweep_results['threshold'], sweep_results['recall_macro'],
              '^--', linewidth=1.5, markersize=5, label='Recall (Macro)', color='red', alpha=0.7)
-    ax1.set_xlabel('Threshold', fontsize=11, fontweight='bold')
-    ax1.set_ylabel('Score', fontsize=11, fontweight='bold')
-    ax1.set_title('Macro-Averaged Metrics vs Threshold', fontsize=12, fontweight='bold')
-    ax1.legend(loc='best')
-    ax1.grid(True, alpha=0.3)
-    ax1.set_xlim(0, 1.0)
-    ax1.set_ylim(0, 1.0)
+    ax.set_xlabel('Threshold', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Score', fontsize=12, fontweight='bold')
+    ax.set_title('Macro-Averaged Metrics vs Threshold', fontsize=14, fontweight='bold')
+    ax.legend(loc='best', fontsize=10)
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(0, 1.0)
+    ax.set_ylim(0, 1.0)
+    plt.tight_layout()
+    macro_file = output_path / 'threshold_macro_metrics.png'
+    plt.savefig(macro_file, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    logger.info(f"    Saved to: {macro_file}")
 
     # Plot 2: Micro metrics
-    ax2 = axes[0, 1]
-    ax2.plot(sweep_results['threshold'], sweep_results['f1_micro'],
+    logger.info("  Creating micro-averaged metrics plot...")
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(sweep_results['threshold'], sweep_results['f1_micro'],
              'o-', linewidth=2, markersize=6, label='F1 (Micro)', color='blue')
-    ax2.plot(sweep_results['threshold'], sweep_results['precision_micro'],
+    ax.plot(sweep_results['threshold'], sweep_results['precision_micro'],
              's--', linewidth=1.5, markersize=5, label='Precision (Micro)', color='green', alpha=0.7)
-    ax2.plot(sweep_results['threshold'], sweep_results['recall_micro'],
+    ax.plot(sweep_results['threshold'], sweep_results['recall_micro'],
              '^--', linewidth=1.5, markersize=5, label='Recall (Micro)', color='red', alpha=0.7)
-    ax2.set_xlabel('Threshold', fontsize=11, fontweight='bold')
-    ax2.set_ylabel('Score', fontsize=11, fontweight='bold')
-    ax2.set_title('Micro-Averaged Metrics vs Threshold', fontsize=12, fontweight='bold')
-    ax2.legend(loc='best')
-    ax2.grid(True, alpha=0.3)
-    ax2.set_xlim(0, 1.0)
-    ax2.set_ylim(0, 1.0)
+    ax.set_xlabel('Threshold', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Score', fontsize=12, fontweight='bold')
+    ax.set_title('Micro-Averaged Metrics vs Threshold', fontsize=14, fontweight='bold')
+    ax.legend(loc='best', fontsize=10)
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(0, 1.0)
+    ax.set_ylim(0, 1.0)
+    plt.tight_layout()
+    micro_file = output_path / 'threshold_micro_metrics.png'
+    plt.savefig(micro_file, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    logger.info(f"    Saved to: {micro_file}")
 
     # Plot 3: All F1 variants
-    ax3 = axes[1, 0]
-    ax3.plot(sweep_results['threshold'], sweep_results['f1_macro'],
+    logger.info("  Creating F1 comparison plot...")
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(sweep_results['threshold'], sweep_results['f1_macro'],
              'o-', linewidth=2, markersize=6, label='F1 (Macro)', color='blue')
-    ax3.plot(sweep_results['threshold'], sweep_results['f1_micro'],
+    ax.plot(sweep_results['threshold'], sweep_results['f1_micro'],
              's-', linewidth=2, markersize=6, label='F1 (Micro)', color='green')
-    ax3.plot(sweep_results['threshold'], sweep_results['f1_weighted'],
+    ax.plot(sweep_results['threshold'], sweep_results['f1_weighted'],
              '^-', linewidth=2, markersize=6, label='F1 (Weighted)', color='purple')
-    ax3.plot(sweep_results['threshold'], sweep_results['f1_sample'],
+    ax.plot(sweep_results['threshold'], sweep_results['f1_sample'],
              'd-', linewidth=2, markersize=6, label='F1 (Sample)', color='orange')
-    ax3.set_xlabel('Threshold', fontsize=11, fontweight='bold')
-    ax3.set_ylabel('F1 Score', fontsize=11, fontweight='bold')
-    ax3.set_title('F1 Score Comparison', fontsize=12, fontweight='bold')
-    ax3.legend(loc='best')
-    ax3.grid(True, alpha=0.3)
-    ax3.set_xlim(0, 1.0)
-    ax3.set_ylim(0, 1.0)
+    ax.set_xlabel('Threshold', fontsize=12, fontweight='bold')
+    ax.set_ylabel('F1 Score', fontsize=12, fontweight='bold')
+    ax.set_title('F1 Score Comparison', fontsize=14, fontweight='bold')
+    ax.legend(loc='best', fontsize=10)
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(0, 1.0)
+    ax.set_ylim(0, 1.0)
+    plt.tight_layout()
+    f1_file = output_path / 'threshold_f1_comparison.png'
+    plt.savefig(f1_file, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    logger.info(f"    Saved to: {f1_file}")
 
     # Plot 4: Number of labels predicted
-    ax4 = axes[1, 1]
-    ax4.plot(sweep_results['threshold'], sweep_results['labels_predicted'],
+    logger.info("  Creating label coverage plot...")
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(sweep_results['threshold'], sweep_results['labels_predicted'],
              'o-', linewidth=2, markersize=6, color='purple')
-    ax4.set_xlabel('Threshold', fontsize=11, fontweight='bold')
-    ax4.set_ylabel('Number of Labels Predicted', fontsize=11, fontweight='bold')
-    ax4.set_title('Label Coverage vs Threshold', fontsize=12, fontweight='bold')
-    ax4.grid(True, alpha=0.3)
-    ax4.set_xlim(0, 1.0)
-    ax4.set_ylim(0, 28)
-    ax4.axhline(y=28, color='gray', linestyle='--', linewidth=1, alpha=0.5, label='All 28 labels')
-    ax4.legend(loc='best')
-
+    ax.set_xlabel('Threshold', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Number of Labels Predicted', fontsize=12, fontweight='bold')
+    ax.set_title('Label Coverage vs Threshold', fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(0, 1.0)
+    ax.set_ylim(0, 28)
+    ax.axhline(y=28, color='gray', linestyle='--', linewidth=1, alpha=0.5, label='All 28 labels')
+    ax.legend(loc='best', fontsize=10)
     plt.tight_layout()
-
-    output_file = Path(output_path)
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
+    coverage_file = output_path / 'threshold_label_coverage.png'
+    plt.savefig(coverage_file, dpi=300, bbox_inches='tight', facecolor='white')
     plt.close()
-
-    logger.info(f"Threshold curves saved to: {output_file}")
+    logger.info(f"    Saved to: {coverage_file}")
 
 
 def plot_per_class_thresholds(
@@ -473,7 +489,7 @@ def main():
     logger.info("GENERATING VISUALIZATIONS")
     logger.info("="*70)
 
-    plot_threshold_curves(df_sweep, output_dir / 'threshold_curves.png')
+    plot_threshold_curves(df_sweep, output_dir)
     plot_per_class_thresholds(df_per_class, output_dir / 'per_class_thresholds.png')
 
     # Save summary JSON
@@ -498,7 +514,10 @@ def main():
     logger.info(f"\nResults saved to: {output_dir}")
     logger.info(f"  - threshold_sweep_results.csv")
     logger.info(f"  - per_class_optimal_thresholds.csv")
-    logger.info(f"  - threshold_curves.png")
+    logger.info(f"  - threshold_macro_metrics.png")
+    logger.info(f"  - threshold_micro_metrics.png")
+    logger.info(f"  - threshold_f1_comparison.png")
+    logger.info(f"  - threshold_label_coverage.png")
     logger.info(f"  - per_class_thresholds.png")
     logger.info(f"  - threshold_summary.json")
 
