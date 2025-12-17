@@ -267,7 +267,7 @@ python -m src.training.train \
 
 ---
 
-## DistilBERT Multi-Seed Robustness Training (Task 08)
+## DistilBERT Multi-Seed Robustness Training
 
 **Objective:** Train DistilBERT with 3 different random seeds to quantify variance for statistical significance testing.
 
@@ -318,6 +318,41 @@ python -m src.training.train \
 
 ---
 
+## Neutral Label Ablation
+
+**Objective:** Compare training runs with and without the neutral label.
+
+### With Neutral Label
+
+```bash
+python -m src.training.train \
+  --model distilbert-base \
+  --lr 3e-5 \
+  --batch-size 32 \
+  --epochs 10 \
+  --dropout 0.1 \
+  --wandb-project GoEmotions_Classification \
+  --colab \
+  --output-dir artifacts/models/distilbert-neutral-on
+```
+
+### Without Neutral Label
+
+```bash
+python -m src.training.train \
+  --model distilbert-base \
+  --lr 3e-5 \
+  --batch-size 32 \
+  --epochs 10 \
+  --dropout 0.1 \
+  --exclude-neutral \
+  --wandb-project GoEmotions_Classification \
+  --colab \
+  --output-dir artifacts/models/distilbert-neutral-off
+```
+
+---
+
 ## Loss Function Experiments
 
 **Objective:** Compare different loss functions to improve rare-label performance.
@@ -346,7 +381,7 @@ python -m src.training.train \
   --batch-size 32 \
   --epochs 10 \
   --dropout 0.1 \
-  --loss-type weighted-bce \
+  --loss-type weighted_bce \
   --wandb-project GoEmotions_Classification \
   --colab \
   --output-dir artifacts/models/distilbert-loss-weighted
@@ -420,4 +455,3 @@ python -m src.training.train \
 ```
 
 **Note:** Reduced batch size to 16 to fit in GPU memory.
-
