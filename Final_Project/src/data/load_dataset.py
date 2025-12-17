@@ -158,13 +158,18 @@ def get_dataset_statistics(dataset: DatasetDict) -> Dict[str, Dict[str, int]]:
             'train': {'num_samples': 43410, 'num_labels': 28},
             'validation': {'num_samples': 5426, 'num_labels': 28},
             'test': {'num_samples': 5427, 'num_labels': 28},
-            'label_distribution': [1234, 5678, ...]  # Count per label in train set
+            'label_distribution': {
+                'admiration': 504,
+                'amusement': 264,
+                'anger': 198,
+                ...
+            }  # Dict mapping label names to counts for class weighting
         }
 
     Example:
         >>> dataset = load_go_emotions()
         >>> stats = get_dataset_statistics(dataset)
-        >>> print(f"Total samples: {sum(s['num_samples'] for s in stats.values())}")
+        >>> print(f"Total samples: {sum(s['num_samples'] for s in stats.values() if isinstance(s, dict) and 'num_samples' in s)}")
     """
     statistics = {}
 
@@ -184,7 +189,13 @@ def get_dataset_statistics(dataset: DatasetDict) -> Dict[str, Dict[str, int]]:
         for sample in dataset['train']:
             for label_idx in sample['labels']:
                 label_counts[label_idx] += 1
-        statistics['label_distribution'] = label_counts
+
+        # Convert to dict mapping label names to counts for class weight computation
+        label_distribution = {}
+        for i, label_name in enumerate(label_names):
+            label_distribution[label_name] = label_counts[i]
+
+        statistics['label_distribution'] = label_distribution
 
     return statistics
 
