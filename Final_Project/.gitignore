@@ -61,6 +61,7 @@ artifacts/**/*
 !artifacts/stats/cooccurrence/*
 !artifacts/stats/multiseed_summary.csv
 !artifacts/stats/significance_tests.csv
+!artifacts/stats/neutral_ablation_summary*.csv
 !artifacts/stats/efficiency/
 !artifacts/stats/efficiency/*
 
