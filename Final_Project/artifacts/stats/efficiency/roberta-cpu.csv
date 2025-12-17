@@ -1,3 +1,5 @@
 model,device,batch_size,num_batches,total_samples,mean_batch_latency_ms,std_batch_latency_ms,p50_batch_latency_ms,p95_batch_latency_ms,p99_batch_latency_ms,mean_sample_latency_ms,throughput_samples_per_sec,checkpoint
-roberta-large,cpu,1,100,100,170.3298,31.0729,157.3202,231.3430,249.6094,170.3298,5.8710,artifacts/models/roberta-large
-roberta-large,cpu,8,12,96,383.7176,36.4220,384.1093,441.1791,445.9619,47.9647,20.8487,artifacts/models/roberta-large
+roberta-large,cpu,1,1000,1000,173.7190,35.5603,166.4164,232.0043,297.6454,173.7190,5.7564,artifacts/models/roberta-large
+roberta-large,cpu,8,125,1000,391.6298,67.9047,382.9867,510.0954,618.4638,48.9537,20.4275,artifacts/models/roberta-large
+roberta-large,cpu,16,62,992,729.8182,85.0874,722.7243,854.7986,943.5270,45.6136,21.9233,artifacts/models/roberta-large
+roberta-large,cpu,32,31,992,1267.4108,98.4218,1255.9916,1450.9622,1481.1998,39.6066,25.2483,artifacts/models/roberta-large
