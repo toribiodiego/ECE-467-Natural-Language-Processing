@@ -283,6 +283,11 @@ def parse_args() -> argparse.Namespace:
         action='store_true',
         help='Remove emojis from text before tokenization'
     )
+    preproc_group.add_argument(
+        '--exclude-neutral',
+        action='store_true',
+        help='Exclude neutral label from classification task (reduces from 28 to 27 labels)'
+    )
 
     # Colab configuration
     colab_group = parser.add_argument_group('Colab Configuration')
@@ -419,6 +424,8 @@ def print_configuration(args: argparse.Namespace) -> None:
         preproc_flags.append("remove_urls")
     if args.remove_emojis:
         preproc_flags.append("remove_emojis")
+    if args.exclude_neutral:
+        preproc_flags.append("exclude_neutral")
     logger.info(f"  Flags:            {', '.join(preproc_flags) if preproc_flags else 'none'}")
     logger.info("")
     logger.info("Output:")
@@ -1347,7 +1354,8 @@ def main() -> None:
         # Load dataset
         dataset, label_names, num_labels = load_dataset_with_limits(
             max_train_samples=args.max_train_samples,
-            max_eval_samples=args.max_eval_samples
+            max_eval_samples=args.max_eval_samples,
+            exclude_neutral=args.exclude_neutral
         )
 
         # Tokenize and create dataloaders

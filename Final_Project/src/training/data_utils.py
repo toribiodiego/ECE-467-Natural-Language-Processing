@@ -91,7 +91,8 @@ def set_seed(seed: int = 42) -> None:
 
 def load_dataset_with_limits(
     max_train_samples: int = None,
-    max_eval_samples: int = None
+    max_eval_samples: int = None,
+    exclude_neutral: bool = False
 ) -> Tuple[DatasetDict, List[str], int]:
     """
     Load GoEmotions dataset with optional sample limiting for testing.
@@ -99,12 +100,13 @@ def load_dataset_with_limits(
     Args:
         max_train_samples: Maximum number of training samples (None for all)
         max_eval_samples: Maximum number of eval samples (None for all)
+        exclude_neutral: Whether to exclude neutral label from classification
 
     Returns:
         Tuple of (dataset, label_names, num_labels):
         - dataset: DatasetDict with train/validation/test splits
         - label_names: List of emotion label names
-        - num_labels: Number of emotion labels (28 for GoEmotions)
+        - num_labels: Number of emotion labels (28 or 27 if neutral excluded)
 
     Raises:
         RuntimeError: If dataset loading fails
@@ -140,6 +142,10 @@ def load_dataset_with_limits(
             dataset['test'] = dataset['test'].select(range(min(max_eval_samples, original_test_size)))
             logger.warning(f"Limited test samples: {original_test_size:,} → {len(dataset['test']):,}")
 
+        # Filter neutral label if requested
+        if exclude_neutral:
+            dataset, label_names, num_labels = filter_neutral_label(dataset, label_names)
+
         # Print final dataset statistics
         logger.info("")
         logger.info("Final dataset sizes:")
@@ -155,6 +161,103 @@ def load_dataset_with_limits(
     except Exception as e:
         logger.error(f"Failed to load dataset: {e}")
         raise RuntimeError(f"Dataset loading failed: {e}") from e
+
+
+def filter_neutral_label(
+    dataset: DatasetDict,
+    label_names: List[str]
+) -> Tuple[DatasetDict, List[str], int]:
+    """
+    Filter out the neutral label from the dataset.
+
+    Removes the neutral label from the classification task and filters out
+    samples that would have no labels after neutral removal.
+
+    Args:
+        dataset: DatasetDict with train/validation/test splits
+        label_names: List of emotion label names (28 for GoEmotions)
+
+    Returns:
+        Tuple of (filtered_dataset, filtered_label_names, num_labels):
+        - filtered_dataset: DatasetDict with neutral label removed
+        - filtered_label_names: List of emotion labels without neutral (27 labels)
+        - num_labels: Number of emotion labels after filtering (27)
+
+    Raises:
+        ValueError: If 'neutral' label is not found in label_names
+    """
+    logger.info("")
+    logger.info("=" * 70)
+    logger.info("Filtering Neutral Label")
+    logger.info("=" * 70)
+
+    # Find neutral label index
+    try:
+        neutral_idx = label_names.index('neutral')
+        logger.info(f"Found neutral label at index {neutral_idx}")
+    except ValueError:
+        raise ValueError("'neutral' label not found in label_names")
+
+    # Create new label names without neutral
+    filtered_label_names = [label for label in label_names if label != 'neutral']
+    num_labels = len(filtered_label_names)
+
+    logger.info(f"Labels: {len(label_names)} → {num_labels} (removed 'neutral')")
+    logger.debug(f"Filtered labels: {', '.join(filtered_label_names)}")
+
+    def filter_split(split_data, split_name: str):
+        """Filter neutral from a single split."""
+        original_size = len(split_data)
+
+        # Filter function to remove samples with only neutral label
+        # and remove neutral from label lists
+        def process_sample(sample):
+            # Remove neutral from labels
+            filtered_labels = [label for label in sample['labels'] if label != neutral_idx]
+
+            # Adjust label indices (shift down labels that were after neutral)
+            adjusted_labels = [
+                label if label < neutral_idx else label - 1
+                for label in filtered_labels
+            ]
+
+            return {
+                'text': sample['text'],
+                'labels': adjusted_labels,
+                'has_labels': len(adjusted_labels) > 0  # Track if sample has any labels
+            }
+
+        # Process all samples
+        processed = split_data.map(process_sample, remove_columns=split_data.column_names)
+
+        # Filter out samples with no labels after neutral removal
+        filtered = processed.filter(lambda x: x['has_labels'])
+
+        # Remove the has_labels column
+        filtered = filtered.remove_columns(['has_labels'])
+
+        filtered_size = len(filtered)
+        removed_count = original_size - filtered_size
+
+        logger.info(f"  {split_name}: {original_size:,} → {filtered_size:,} samples ({removed_count:,} removed)")
+
+        return filtered
+
+    # Filter all splits
+    filtered_dataset = DatasetDict({
+        'train': filter_split(dataset['train'], 'Train'),
+        'validation': filter_split(dataset['validation'], 'Validation'),
+        'test': filter_split(dataset['test'], 'Test')
+    })
+
+    logger.info("")
+    logger.info("Filtered dataset sizes:")
+    logger.info(f"  Train:      {len(filtered_dataset['train']):,} samples")
+    logger.info(f"  Validation: {len(filtered_dataset['validation']):,} samples")
+    logger.info(f"  Test:       {len(filtered_dataset['test']):,} samples")
+    logger.info("=" * 70)
+
+    return filtered_dataset, filtered_label_names, num_labels
 
 
 def compute_token_coverage_stats(
