@@ -25,8 +25,9 @@ env/
 *.csv
 !artifacts/stats/cooccurrence/*.csv
 *.parquet
-data/
+/data/
 datasets/
+!src/data/
 
 # Model checkpoints
 *.pt

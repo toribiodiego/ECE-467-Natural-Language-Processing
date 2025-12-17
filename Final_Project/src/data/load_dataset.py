@@ -147,7 +147,7 @@ def get_label_names(dataset: DatasetDict) -> List[str]:
 
 def get_dataset_statistics(dataset: DatasetDict) -> Dict[str, Dict[str, int]]:
     """
-    Calculate basic statistics for each dataset split.
+    Calculate basic statistics for each dataset split including label distribution.
 
     Args:
         dataset: DatasetDict returned from load_go_emotions()
@@ -157,7 +157,8 @@ def get_dataset_statistics(dataset: DatasetDict) -> Dict[str, Dict[str, int]]:
         {
             'train': {'num_samples': 43410, 'num_labels': 28},
             'validation': {'num_samples': 5426, 'num_labels': 28},
-            'test': {'num_samples': 5427, 'num_labels': 28}
+            'test': {'num_samples': 5427, 'num_labels': 28},
+            'label_distribution': [1234, 5678, ...]  # Count per label in train set
         }
 
     Example:
@@ -176,6 +177,14 @@ def get_dataset_statistics(dataset: DatasetDict) -> Dict[str, Dict[str, int]]:
                 'num_samples': len(dataset[split_name]),
                 'num_labels': num_labels
             }
+
+    # Compute label distribution from training set for class weighting
+    if 'train' in dataset:
+        label_counts = [0] * num_labels
+        for sample in dataset['train']:
+            for label_idx in sample['labels']:
+                label_counts[label_idx] += 1
+        statistics['label_distribution'] = label_counts
 
     return statistics
 
